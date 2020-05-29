@@ -18,15 +18,29 @@
 */
 
 #pragma once
-#include "IExchange.h"
+
+#include "EncryptedBuffer.h"
+#include "GstBufferView.h"
+#include "IExchangeFactory.h"
+
+#include <gst/gstbuffer.h>
+#include <gst/gstevent.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
-    class IExchangeFactory {
+    class IGstDecryptor {
     public:
-        virtual std::unique_ptr<IExchange> Create(const std::string&) = 0;
 
-        virtual ~IExchangeFactory(){};
+        static std::unique_ptr<IGstDecryptor> Create();
+
+        virtual gboolean Initialize(std::unique_ptr<IExchangeFactory>,
+            const std::string& keysystem,
+            const std::string& origin,
+            BufferView& initData) = 0;
+
+        virtual GstFlowReturn Decrypt(std::shared_ptr<EncryptedBuffer>) = 0;
+
+        virtual ~IGstDecryptor(){};
     };
 }
 }

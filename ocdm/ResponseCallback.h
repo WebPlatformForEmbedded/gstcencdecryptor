@@ -19,21 +19,29 @@
 
 #pragma once
 
-#include "Exchanger.hpp"
-#include "IExchangeFactory.hpp"
+#include "IExchange.h"
+#include <ocdm/open_cdm.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
+    namespace OCDM {
 
-    class ExchangeFactory : public IExchangeFactory {
-    public:
-        std::unique_ptr<IExchange> Create(const std::string& url) override
-        {
-            return std::unique_ptr<IExchange>(new Exchanger(url));
+        class ResponseCallback : public IExchange::ICallback {
+        public:
+            ResponseCallback() = delete;
+            ResponseCallback(const ResponseCallback&) = delete;
+            ResponseCallback& operator=(const ResponseCallback&) = delete;
+
+            ResponseCallback(OpenCDMSession*&, Core::CriticalSection& sessionLock);
+            ~ResponseCallback() override{};
+
+            void Response(Core::ProxyType<Web::Request>,
+                Core::ProxyType<Web::Response>) override;
+
+        private:
+            OpenCDMSession*& _session;
+            Core::CriticalSection& _sessionLock;
         };
-
-        ~ExchangeFactory() override{};
-    };
-
+    }
 }
 }

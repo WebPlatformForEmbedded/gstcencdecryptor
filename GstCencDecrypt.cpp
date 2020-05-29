@@ -17,12 +17,12 @@
  * Boston, MA 02110-1301, USA.
 */
 
-#include "GstCencDecrypt.hpp"
+#include "GstCencDecrypt.h"
 
-#include "IExchangeFactory.hpp"
+#include "IExchangeFactory.h"
 
-#include "ocdm/Decryptor.hpp"
-#include "ocdm/ExchangeFactory.hpp"
+#include "ocdm/Decryptor.h"
+#include "ocdm/ExchangeFactory.h"
 
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
@@ -89,7 +89,7 @@ void Finalize(GObject* object)
     GstCencDecrypt* cencdecrypt = GST_CENCDECRYPT(object);
 
     GST_DEBUG_OBJECT(cencdecrypt, "finalize");
-    
+
     cencdecrypt->_impl->_decryptor.reset();
 
     G_OBJECT_CLASS(gst_cencdecrypt_parent_class)->finalize(object);
@@ -124,9 +124,9 @@ static void gst_cencdecrypt_init(GstCencDecrypt* cencdecrypt)
     gst_base_transform_set_passthrough(base, FALSE);
     gst_base_transform_set_gap_aware(base, FALSE);
 
-    cencdecrypt->_impl = std::move(std::unique_ptr<GstCencDecryptImpl>(new GstCencDecryptImpl()));
-    cencdecrypt->_impl->_decryptor = std::move(std::unique_ptr<OCDMDecryptor>(new OCDMDecryptor()));
-    
+    cencdecrypt->_impl = std::unique_ptr<GstCencDecryptImpl>(new GstCencDecryptImpl());
+    cencdecrypt->_impl->_decryptor = IGstDecryptor::Create();
+
     GST_FIXME_OBJECT(cencdecrypt, "Caps are constructed based on hard coded keysystem values");
 }
 
@@ -146,12 +146,14 @@ static gboolean SrcCapsTransform(GstCapsFeatures* features,
         "pixel-aspect-ratio",
         "profile",
         "rate",
-        "width");
+        "width",
+        nullptr);
 
     gst_structure_set(structure, "original-media-type", G_TYPE_STRING, gst_structure_get_name(structure), nullptr);
     gst_structure_set(structure,
         "protection-system", G_TYPE_STRING, impl->_keySystem.c_str(), nullptr);
     gst_structure_set_name(structure, cencPrefix);
+    return TRUE;
 }
 
 static gboolean SinkCapsTransform(GstCapsFeatures* features,
@@ -205,7 +207,7 @@ static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event)
         BufferView initDataView(initData, GST_MAP_READ);
 
         gboolean result = cencdecrypt->_impl->_decryptor->Initialize(
-            std::unique_ptr<IExchangeFactory>(new ExchangeFactory()),
+            IExchangeFactory::Create(),
             cencdecrypt->_impl->_keySystem,
             std::string(origin),
             initDataView);

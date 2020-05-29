@@ -17,31 +17,34 @@
  * Boston, MA 02110-1301, USA.
 */
 
-#include "ResponseCallback.hpp"
+#include "ResponseCallback.h"
 
 namespace WPEFramework {
 namespace CENCDecryptor {
-    OCDMResponseCallback::OCDMResponseCallback(OpenCDMSession*& session, Core::CriticalSection& sessionLock)
-        : _session(session)
-        , _sessionLock(sessionLock)
-    {
-    }
+    namespace OCDM {
 
-    void OCDMResponseCallback::Response(Core::ProxyType<Web::Request> req,
-        Core::ProxyType<Web::Response> res)
-    {
-        ASSERT(_session != nullptr)
-        if (res->HasBody()) {
-            Core::ProxyType<Web::TextBody> body = res->Body<Web::TextBody>();
-            auto keyResponse = reinterpret_cast<const uint8_t*>(body->c_str());
-            
-            _sessionLock.Lock();
-            
-            opencdm_session_update(_session, keyResponse, body->length());
-            
-            _sessionLock.Unlock();
-        } else {
-            TRACE_L1("Challenge response without a body");
+        ResponseCallback::ResponseCallback(OpenCDMSession*& session, Core::CriticalSection& sessionLock)
+            : _session(session)
+            , _sessionLock(sessionLock)
+        {
+        }
+
+        void ResponseCallback::Response(Core::ProxyType<Web::Request> req,
+            Core::ProxyType<Web::Response> res)
+        {
+            ASSERT(_session != nullptr)
+            if (res->HasBody()) {
+                Core::ProxyType<Web::TextBody> body = res->Body<Web::TextBody>();
+                auto keyResponse = reinterpret_cast<const uint8_t*>(body->c_str());
+
+                _sessionLock.Lock();
+
+                opencdm_session_update(_session, keyResponse, body->length());
+
+                _sessionLock.Unlock();
+            } else {
+                TRACE_L1("Challenge response without a body");
+            }
         }
     }
 }

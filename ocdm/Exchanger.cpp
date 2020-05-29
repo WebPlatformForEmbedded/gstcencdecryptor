@@ -17,115 +17,125 @@
  * Boston, MA 02110-1301, USA.
 */
 
-#include "Exchanger.hpp"
+#include "Exchanger.h"
 #include <interfaces/ITimeSync.h>
 #include <plugins/System.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
-    Core::ProxyPoolType<Web::TextBody> Exchanger::Challenger::_bodyFactory(2);
+    namespace OCDM {
 
-    Exchanger::Exchanger(const std::string& url)
-        : _url(url)
-        , _reqTrigger(false, true)
-        , _resReceived(false, true)
-        , _challenger(*this, _resReceived)
-        , _reqOverwatch()
-    {
-    }
+        Core::ProxyPoolType<Web::TextBody>
+            Exchanger::Challenger::_bodyFactory(2);
 
-    Core::ProxyType<Web::Response> Exchanger::Element()
-    {
-        return (PluginHost::Factories::Instance().Response());
-    }
+        Exchanger::Exchanger(const std::string& url)
+            : _url(url)
+            , _reqTrigger(false, true)
+            , _resReceived(false, true)
+            , _challenger(*this, _resReceived)
+            , _reqOverwatch()
+        {
+        }
 
-    uint32_t Exchanger::Submit(Core::ProxyType<Web::Request> request,
-        Core::ProxyType<IExchange::ICallback> onResponse, uint32_t waitTime)
-    {
-        LicenseRequestData reqData({ request, onResponse, waitTime, _url });
+        Core::ProxyType<Web::Response> Exchanger::Element()
+        {
+            return (PluginHost::Factories::Instance().Response());
+        }
 
-        _reqOverwatch = Core::ProxyType<Core::IDispatch>(
-            Core::ProxyType<Overwatch>::Create(_challenger, reqData));
+        uint32_t Exchanger::Submit(Core::ProxyType<Web::Request> request,
+            Core::ProxyType<IExchange::ICallback> onResponse, uint32_t waitTime)
+        {
+            LicenseRequestData reqData({ request, onResponse, waitTime, _url });
 
-        Core::IWorkerPool::Instance().Schedule(Core::Time::Now(), _reqOverwatch);
-    }
+            _reqOverwatch = Core::ProxyType<Core::IDispatch>(
+                Core::ProxyType<Overwatch>::Create(_challenger, reqData));
 
-    uint32_t Exchanger::Revoke(Core::ProxyType<IExchange::ICallback> onResponse)
-    {
-        // TODO
-    }
-
-    Exchanger::Challenger::Challenger(Exchanger& parent, Core::Event& resReceived)
-        : Exchanger::Challenger::WebLinkClass(2, parent, false, Core::NodeId(), Core::NodeId(), 2048, 2048)
-        , _resReceived(resReceived)
-    {
-    }
-
-    void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& request, const Core::URL& url)
-    {
-        _request = request;
-        _request->Path = '/' + url.Path().Value();
-        _request->Host = url.Host().Value();
-
-        Core::NodeId remoteNode(url.Host().Value().c_str(), 80, Core::NodeId::TYPE_IPV4);
-        if (remoteNode.IsValid() == false) {
-            TRACE_L1("Connection to %s unavailable", url.Host().Value().c_str());
-        } else {
-            Link().RemoteNode(remoteNode);
-            Link().LocalNode(remoteNode.AnyInterface());
-            uint32_t result = Open(0);
-            if (result != Core::ERROR_NONE) {
-                _resReceived.Lock(Core::infinite);
+            if (_reqOverwatch != nullptr) {
+                Core::IWorkerPool::Instance().Schedule(Core::Time::Now(), _reqOverwatch);
+                return Core::ERROR_INPROGRESS;
             } else {
-                TRACE_L1("Failed to open the connection to LA server: <%d>", result);
+                return Core::ERROR_UNAVAILABLE;
             }
         }
-    }
 
-    Core::ProxyType<Web::Response> Exchanger::Challenger::Response()
-    {
-        return _response;
-    }
-
-    void Exchanger::Challenger::LinkBody(Core::ProxyType<Web::Response>& element)
-    {
-        element->Body<Web::TextBody>(_bodyFactory.Element());
-    }
-
-    void Exchanger::Challenger::Received(Core::ProxyType<Web::Response>& res)
-    {
-        _response = res;
-        std::string str;
-        _response->ToString(str);
-        _resReceived.SetEvent();
-    }
-
-    void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& req)
-    {
-        ASSERT(req == _request);
-    }
-
-    void Exchanger::Challenger::StateChange()
-    {
-        std::string str;
-        _request->ToString(str);
-        if (IsOpen()) {
-            Submit(_request);
+        uint32_t Exchanger::Revoke(Core::ProxyType<IExchange::ICallback> onResponse)
+        {
+            // TODO:
+            return Core::ERROR_UNAVAILABLE;
         }
-    }
 
-    Exchanger::Overwatch::Overwatch(Challenger& challenger, const LicenseRequestData& requestData)
-        : _challenger(challenger)
-        , _requestData(requestData)
-    {
-    }
+        Exchanger::Challenger::Challenger(Exchanger& parent, Core::Event& resReceived)
+            : Exchanger::Challenger::WebLinkClass(2, parent, false, Core::NodeId(), Core::NodeId(), 2048, 2048)
+            , _resReceived(resReceived)
+        {
+        }
 
-    void Exchanger::Overwatch::Dispatch()
-    {
-        _challenger.Send(_requestData.licenseRequest, this->_requestData.url);
+        void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& request, const Core::URL& url)
+        {
+            _request = request;
+            _request->Path = '/' + url.Path().Value();
+            _request->Host = url.Host().Value();
 
-        this->_requestData.licenseHandler->Response(this->_requestData.licenseRequest,
-            this->_challenger.Response());
+            Core::NodeId remoteNode(url.Host().Value().c_str(), 80, Core::NodeId::TYPE_IPV4);
+            if (remoteNode.IsValid() == false) {
+                TRACE_L1("Connection to %s unavailable", url.Host().Value().c_str());
+            } else {
+                Link().RemoteNode(remoteNode);
+                Link().LocalNode(remoteNode.AnyInterface());
+                uint32_t result = Open(0);
+                if (result != Core::ERROR_NONE) {
+                    _resReceived.Lock(Core::infinite);
+                } else {
+                    TRACE_L1("Failed to open the connection to LA server: <%d>", result);
+                }
+            }
+        }
+
+        Core::ProxyType<Web::Response> Exchanger::Challenger::Response()
+        {
+            return _response;
+        }
+
+        void Exchanger::Challenger::LinkBody(Core::ProxyType<Web::Response>& element)
+        {
+            element->Body<Web::TextBody>(_bodyFactory.Element());
+        }
+
+        void Exchanger::Challenger::Received(Core::ProxyType<Web::Response>& res)
+        {
+            _response = res;
+            std::string str;
+            _response->ToString(str);
+            _resReceived.SetEvent();
+        }
+
+        void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& req)
+        {
+            ASSERT(req == _request);
+        }
+
+        void Exchanger::Challenger::StateChange()
+        {
+            std::string str;
+            _request->ToString(str);
+            if (IsOpen()) {
+                Submit(_request);
+            }
+        }
+
+        Exchanger::Overwatch::Overwatch(Challenger& challenger, const LicenseRequestData& requestData)
+            : _challenger(challenger)
+            , _requestData(requestData)
+        {
+        }
+
+        void Exchanger::Overwatch::Dispatch()
+        {
+            _challenger.Send(_requestData.licenseRequest, this->_requestData.url);
+
+            this->_requestData.licenseHandler->Response(this->_requestData.licenseRequest,
+                this->_challenger.Response());
+        }
     }
 }
 }

@@ -22,8 +22,8 @@
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
 
-#include "IExchangeFactory.hpp"
-#include "IGstDecryptor.hpp"
+#include "IExchangeFactory.h"
+#include "IGstDecryptor.h"
 #include <memory>
 
 G_BEGIN_DECLS

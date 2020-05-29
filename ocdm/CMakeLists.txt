@@ -16,7 +16,7 @@
 # Boston, MA 02110-1301, USA.
 
 find_package(ocdm REQUIRED)
-set(GST_CENC_PLUGIN_IMPLEMENTATION gstdashdecrypt_ocdm)
+set(GST_CENC_PLUGIN_IMPLEMENTATION gstcencdecrypt_ocdm)
 
 add_library(${GST_CENC_PLUGIN_IMPLEMENTATION} STATIC "")
 

@@ -15,11 +15,16 @@
 # Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-set(GST_CENC_PLUGIN_NAME gstdashdecrypt)
+cmake_minimum_required(VERSION 3.3)
+
+project(gstcencdecrypt)
+
+set(DECRYPTOR "ocdm" CACHE STRING "Decryptor implementation to use. (Default: ocdm)")
+
+find_package(WPEFramework REQUIRED)
+find_package(${NAMESPACE}Core REQUIRED)
 
 find_package(PkgConfig REQUIRED)
-find_package(${NAMESPACE}Plugins REQUIRED)
-
 pkg_check_modules(GST 
     REQUIRED 
         gstreamer-1.0>=1.4
@@ -28,27 +33,26 @@ pkg_check_modules(GST
         gstreamer-app-1.0>=1.4
         gstreamer-base-1.0>=1.4)
 
-add_library(${GST_CENC_PLUGIN_NAME} SHARED "")
 
-target_include_directories(${GST_CENC_PLUGIN_NAME}
+add_library(${PROJECT_NAME} SHARED "")
+
+target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${GST_INCLUDE_DIRS})
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ocdm)
+if(${DECRYPTOR} STREQUAL "ocdm")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ocdm)
+else()
+    message(SEND_ERROR "No valid decryptor selected")
+endif()
 
-target_sources(${GST_CENC_PLUGIN_NAME}
+target_sources(${PROJECT_NAME}
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/EncryptedBuffer.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp)
 
-target_link_libraries(${GST_CENC_PLUGIN_NAME}
+target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${NAMESPACE}Core::${NAMESPACE}Core
-        ${NAMESPACE}Plugins::${NAMESPACE}Plugins 
         ${GST_LIBRARIES}
-        gstdashdecrypt_ocdm)
-
-install(TARGETS ${GST_CENC_PLUGIN_NAME}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)
-     
+        gstcencdecrypt_ocdm)
