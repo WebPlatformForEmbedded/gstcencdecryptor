@@ -28,11 +28,6 @@ namespace CENCDecryptor {
 
         class ExchangeFactory : public IExchangeFactory {
         public:
-            static std::unique_ptr<IExchangeFactory> Create()
-            {
-                return std::unique_ptr<IExchangeFactory>(new ExchangeFactory());
-            };
-
             std::unique_ptr<IExchange> CreateExchange(const std::string& url) override
             {
                 return std::unique_ptr<IExchange>(new Exchanger(url));
@@ -42,5 +37,10 @@ namespace CENCDecryptor {
         };
 
     }
+
+    std::unique_ptr<IExchangeFactory> IExchangeFactory::Create()
+    {
+        return std::unique_ptr<IExchangeFactory>(new OCDM::ExchangeFactory());
+    };
 }
 }

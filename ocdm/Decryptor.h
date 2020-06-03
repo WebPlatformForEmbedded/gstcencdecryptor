@@ -32,10 +32,6 @@ namespace CENCDecryptor {
 
         class Decryptor : public IGstDecryptor {
         public:
-            static std::unique_ptr<IGstDecryptor> Create()
-            {
-                return std::unique_ptr<IGstDecryptor>(new Decryptor());
-            }
 
             Decryptor();
             Decryptor(const Decryptor&) = delete;

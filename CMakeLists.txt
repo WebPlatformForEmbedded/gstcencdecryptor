@@ -54,5 +54,6 @@ target_sources(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${NAMESPACE}Core::${NAMESPACE}Core
+        
         ${GST_LIBRARIES}
         gstcencdecrypt_ocdm)

@@ -16,6 +16,8 @@
 # Boston, MA 02110-1301, USA.
 
 find_package(ocdm REQUIRED)
+find_package(${NAMESPACE}Plugins REQUIRED)
+
 set(GST_CENC_PLUGIN_IMPLEMENTATION gstcencdecrypt_ocdm)
 
 add_library(${GST_CENC_PLUGIN_IMPLEMENTATION} STATIC "")
@@ -34,5 +36,6 @@ target_sources(${GST_CENC_PLUGIN_IMPLEMENTATION}
 
 target_link_libraries(${GST_CENC_PLUGIN_IMPLEMENTATION}
         PUBLIC
+            ${NAMESPACE}Plugins::${NAMESPACE}Plugins
             ocdm::ocdm
             ${OCDM_LIBRARIES})

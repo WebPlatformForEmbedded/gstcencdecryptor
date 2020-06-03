@@ -218,5 +218,10 @@ namespace CENCDecryptor {
             _keyReceived.SetEvent();
         }
     }
+
+    std::unique_ptr<IGstDecryptor> IGstDecryptor::Create()
+    {
+        return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor());
+    }
 }
 }
