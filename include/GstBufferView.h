@@ -22,6 +22,9 @@
 
 namespace WPEFramework {
 namespace CENCDecryptor {
+    /**
+     * @brief RAII wrapper for the GstBuffer read/write operations.
+     */
     class BufferView {
     public:
         BufferView() = delete;
@@ -34,7 +37,18 @@ namespace CENCDecryptor {
             gst_buffer_map(_buffer, &_dataView, flags);
         }
 
+        /**
+         * @brief 
+         * 
+         * @return gsize The size of the mapped buffer.
+         */
         gsize Size() { return _dataView.size; }
+
+        /**
+         * @brief TODO
+         * 
+         * @return guint8* Raw data buffer.
+         */
         guint8* Raw() { return _dataView.data; }
 
         ~BufferView()

@@ -15,27 +15,28 @@
 # Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
+
 find_package(ocdm REQUIRED)
-find_package(${NAMESPACE}Plugins REQUIRED)
+find_package(${NAMESPACE}Core REQUIRED)
 
 set(GST_CENC_PLUGIN_IMPLEMENTATION gstcencdecrypt_ocdm)
 
 add_library(${GST_CENC_PLUGIN_IMPLEMENTATION} STATIC "")
 
 target_include_directories(${GST_CENC_PLUGIN_IMPLEMENTATION}
-    PUBLIC
+    PRIVATE
         ${GST_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
 target_sources(${GST_CENC_PLUGIN_IMPLEMENTATION} 
-    PUBLIC
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Decryptor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Exchanger.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ResponseCallback.cpp)
 
+
 target_link_libraries(${GST_CENC_PLUGIN_IMPLEMENTATION}
-        PUBLIC
-            ${NAMESPACE}Plugins::${NAMESPACE}Plugins
-            ocdm::ocdm
-            ${OCDM_LIBRARIES})
+    PRIVATE
+        ${NAMESPACE}Core::${NAMESPACE}Core
+        ocdm::ocdm)

@@ -21,7 +21,6 @@
 
 #include "EncryptedBuffer.h"
 #include "GstBufferView.h"
-#include "IExchangeFactory.h"
 #include "IGstDecryptor.h"
 #include "ResponseCallback.h"
 #include <ocdm/open_cdm.h>
@@ -32,14 +31,13 @@ namespace CENCDecryptor {
 
         class Decryptor : public IGstDecryptor {
         public:
-
             Decryptor();
             Decryptor(const Decryptor&) = delete;
             Decryptor& operator=(const Decryptor&) = delete;
 
             ~Decryptor() override;
 
-            gboolean Initialize(std::unique_ptr<IExchangeFactory>,
+            gboolean Initialize(std::unique_ptr<CENCDecryptor::IExchange>,
                 const std::string& keysystem,
                 const std::string& origin,
                 BufferView& initData) override;
@@ -53,14 +51,13 @@ namespace CENCDecryptor {
 
             uint32_t WaitForKeyId(BufferView& keyId, uint32_t timeout);
 
-            Core::ProxyType<Web::Request> PrepareChallenge(const string& challenge);
+            Core::ProxyType<Web::Request> PrepareRequest(const string& challenge, const std::string& url);
 
             OpenCDMSystem* _system;
             OpenCDMSession* _session;
-            std::unique_ptr<IExchange> _exchanger;
-            std::unique_ptr<IExchangeFactory> _factory;
             OpenCDMSessionCallbacks _callbacks;
 
+            std::unique_ptr<CENCDecryptor::IExchange> _exchanger;
             Core::Event _keyReceived;
             mutable Core::CriticalSection _sessionLock;
 

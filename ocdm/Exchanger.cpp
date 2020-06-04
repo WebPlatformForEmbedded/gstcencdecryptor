@@ -19,43 +19,31 @@
 
 #include "Exchanger.h"
 #include <interfaces/ITimeSync.h>
-#include <plugins/System.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
     namespace OCDM {
 
-        Core::ProxyPoolType<Web::TextBody>
-            Exchanger::Challenger::_bodyFactory(2);
-
-        Exchanger::Exchanger(const std::string& url)
-            : _url(url)
-            , _reqTrigger(false, true)
+        Exchanger::Exchanger()
+            : _reqTrigger(false, true)
             , _resReceived(false, true)
             , _challenger(*this, _resReceived)
-            , _reqOverwatch()
+            , _queue(5) // TODO: magic constant
+            , _consumer(_challenger, _queue)
         {
         }
 
         Core::ProxyType<Web::Response> Exchanger::Element()
         {
-            return (PluginHost::Factories::Instance().Response());
+            return Core::ProxyType<Web::Response>::Create();
         }
 
         uint32_t Exchanger::Submit(Core::ProxyType<Web::Request> request,
-            Core::ProxyType<IExchange::ICallback> onResponse, uint32_t waitTime)
+            Core::ProxyType<IExchange::ICallback> onResponse,
+            uint32_t waitTime)
         {
-            LicenseRequestData reqData({ request, onResponse, waitTime, _url });
-
-            _reqOverwatch = Core::ProxyType<Core::IDispatch>(
-                Core::ProxyType<Overwatch>::Create(_challenger, reqData));
-
-            if (_reqOverwatch != nullptr) {
-                Core::IWorkerPool::Instance().Schedule(Core::Time::Now(), _reqOverwatch);
-                return Core::ERROR_INPROGRESS;
-            } else {
-                return Core::ERROR_UNAVAILABLE;
-            }
+            bool isOverfilled = _queue.Post(LicenseRequest({ request, onResponse, waitTime }));
+            return isOverfilled ? Core::ERROR_UNAVAILABLE : Core::ERROR_NONE;
         }
 
         uint32_t Exchanger::Revoke(Core::ProxyType<IExchange::ICallback> onResponse)
@@ -65,26 +53,33 @@ namespace CENCDecryptor {
         }
 
         Exchanger::Challenger::Challenger(Exchanger& parent, Core::Event& resReceived)
-            : Exchanger::Challenger::WebLinkClass(2, parent, false, Core::NodeId(), Core::NodeId(), 2048, 2048)
+            : Exchanger::Challenger::WebLinkClass(2,
+                parent,
+                false,
+                Core::NodeId(),
+                Core::NodeId(),
+                2048,
+                2048)
             , _resReceived(resReceived)
         {
         }
 
-        void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& request, const Core::URL& url)
+        void Exchanger::Challenger::Send(const Core::ProxyType<Web::Request>& request, uint32_t timeout)
         {
+            _response.Destroy();
             _request = request;
-            _request->Path = '/' + url.Path().Value();
-            _request->Host = url.Host().Value();
 
-            Core::NodeId remoteNode(url.Host().Value().c_str(), 80, Core::NodeId::TYPE_IPV4);
+            Core::NodeId remoteNode(_request->Host.Value().c_str(), 80, Core::NodeId::TYPE_IPV4);
             if (remoteNode.IsValid() == false) {
-                TRACE_L1("Connection to %s unavailable", url.Host().Value().c_str());
+                TRACE_L1("Connection to %s unavailable", _request->Host.Value().c_str());
             } else {
+
                 Link().RemoteNode(remoteNode);
                 Link().LocalNode(remoteNode.AnyInterface());
                 uint32_t result = Open(0);
+
                 if (result != Core::ERROR_NONE) {
-                    _resReceived.Lock(Core::infinite);
+                    _resReceived.Lock(timeout);
                 } else {
                     TRACE_L1("Failed to open the connection to LA server: <%d>", result);
                 }
@@ -98,14 +93,12 @@ namespace CENCDecryptor {
 
         void Exchanger::Challenger::LinkBody(Core::ProxyType<Web::Response>& element)
         {
-            element->Body<Web::TextBody>(_bodyFactory.Element());
+            element->Body<Web::TextBody>(Core::ProxyType<Web::TextBody>::Create());
         }
 
         void Exchanger::Challenger::Received(Core::ProxyType<Web::Response>& res)
         {
             _response = res;
-            std::string str;
-            _response->ToString(str);
             _resReceived.SetEvent();
         }
 
@@ -116,25 +109,37 @@ namespace CENCDecryptor {
 
         void Exchanger::Challenger::StateChange()
         {
-            std::string str;
-            _request->ToString(str);
             if (IsOpen()) {
                 Submit(_request);
             }
         }
 
-        Exchanger::Overwatch::Overwatch(Challenger& challenger, const LicenseRequestData& requestData)
+        Exchanger::QueueWorker::QueueWorker(Challenger& challenger, Core::QueueType<LicenseRequest>& queue)
             : _challenger(challenger)
-            , _requestData(requestData)
+            , _queue(queue)
         {
+            this->Run();
         }
 
-        void Exchanger::Overwatch::Dispatch()
+        uint32_t Exchanger::QueueWorker::Worker()
         {
-            _challenger.Send(_requestData.licenseRequest, this->_requestData.url);
+            LicenseRequest requestData;
+            bool extracted = _queue.Extract(requestData, Core::infinite);
 
-            this->_requestData.licenseHandler->Response(this->_requestData.licenseRequest,
-                this->_challenger.Response());
+            if (extracted) {
+                _challenger.Send(requestData.licenseRequest, requestData.timeout);
+
+                requestData.licenseHandler->Response(requestData.licenseRequest,
+                    _challenger.Response());
+            }
+
+            return Core::ERROR_NONE;
+        }
+
+        Exchanger::QueueWorker::~QueueWorker()
+        {
+            this->Stop();
+            TRACE_L1("Stopped queue worker");
         }
     }
 }
