@@ -95,7 +95,9 @@ namespace CENCDecryptor {
                 return "com.widevine.alpha";
             else if (guid == "9a04f079-9840-4286-ab92-e65be0885f95")
                 return "com.microsoft.playready";
-            else
+            else if (guid == "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b")
+                return "org.w3.clearkey"
+            else 
                 return "";
         }
 

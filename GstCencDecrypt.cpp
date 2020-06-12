@@ -41,7 +41,7 @@ constexpr static auto clearContentTypes = { "video/mp4", "audio/mp4", "audio/mpe
 
 // TODO: This information should be returned from OpenCDM.
 static std::map<std::string, std::string> keySystems{ { "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", "com.widevine.alpha" },
-    { "9a04f079-9840-4286-ab92-e65be0885f95", "com.microsoft.playready" } };
+    { "9a04f079-9840-4286-ab92-e65be0885f95", "com.microsoft.playready" }, {"1077efec-c0b2-4d02-ace3-3c1e52e2fb4b", "org.w3.clearkey"} };
 constexpr static auto cencPrefix = "application/x-cenc";
 
 // Overwritten GstBaseTransform callbacks:
