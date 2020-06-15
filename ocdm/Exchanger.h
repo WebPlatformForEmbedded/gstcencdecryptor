@@ -20,6 +20,7 @@
 #pragma once
 
 #include "IExchange.h"
+#include <plugins/System.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
@@ -27,12 +28,11 @@ namespace CENCDecryptor {
 
         class Exchanger : public IExchange {
         public:
-            explicit Exchanger(const std::string& url);
-            Exchanger() = delete;
+            Exchanger();
             Exchanger(const Exchanger&) = delete;
             Exchanger& operator=(const Exchanger&) = delete;
 
-            ~Exchanger() override{};
+            ~Exchanger() override { _queue.Disable(); };
 
             uint32_t Submit(Core::ProxyType<Web::Request>,
                 Core::ProxyType<IExchange::ICallback>, uint32_t waitTime) override;
@@ -57,7 +57,7 @@ namespace CENCDecryptor {
                 Challenger() = delete;
                 explicit Challenger(Exchanger& parent, Core::Event& resReceived);
 
-                void Send(const Core::ProxyType<Web::Request>&, const Core::URL&);
+                void Send(const Core::ProxyType<Web::Request>&, uint32_t timeout);
                 Core::ProxyType<Web::Response> Response();
 
             private:
@@ -69,37 +69,43 @@ namespace CENCDecryptor {
                 Core::Event& _resReceived;
                 Core::ProxyType<Web::Response> _response;
                 Core::ProxyType<Web::Request> _request;
-                static Core::ProxyPoolType<Web::TextBody> _bodyFactory;
             };
 
-            struct LicenseRequestData {
+            struct LicenseRequest {
+            public:
                 Core::ProxyType<Web::Request> licenseRequest;
                 Core::ProxyType<IExchange::ICallback> licenseHandler;
                 uint32_t timeout;
-                Core::URL url;
             };
 
-            class Overwatch : public Core::IDispatch {
+            class QueueWorker : public Core::Thread {
             public:
-                Overwatch() = delete;
-                Overwatch(Challenger& challenger,
-                    const LicenseRequestData& reqData);
+                QueueWorker() = delete;
+                QueueWorker& operator=(const QueueWorker&) = delete;
+                QueueWorker(const QueueWorker&) = delete;
 
-                void Dispatch() override;
+                QueueWorker(Challenger&, Core::QueueType<LicenseRequest>&);
+                ~QueueWorker();
+
+                uint32_t Worker() override;
 
             private:
                 Challenger& _challenger;
-                LicenseRequestData _requestData;
+                Core::QueueType<LicenseRequest>& _queue;
             };
 
         private:
-            Core::URL _url;
             Core::Event _reqTrigger;
             Core::Event _resReceived;
             Challenger _challenger;
-            LicenseRequestData _requestData;
-            Core::ProxyType<Core::IDispatch> _reqOverwatch;
+            Core::QueueType<LicenseRequest> _queue;
+            QueueWorker _consumer;
         };
+    }
+
+    std::unique_ptr<CENCDecryptor::IExchange> CENCDecryptor::IExchange::Create()
+    {
+        return std::unique_ptr<CENCDecryptor::IExchange>(new CENCDecryptor::OCDM::Exchanger());
     }
 }
 }

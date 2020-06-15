@@ -32,23 +32,22 @@ namespace CENCDecryptor {
         Decryptor::Decryptor()
             : _system(nullptr)
             , _session(nullptr)
-            , _exchanger()
-            , _factory()
             , _callbacks({ process_challenge_callback,
                   key_update_callback,
                   error_message_callback,
                   keys_updated_callback })
+            , _exchanger(nullptr)
             , _keyReceived(false, true)
             , _sessionLock()
         {
         }
 
-        gboolean Decryptor::Initialize(std::unique_ptr<IExchangeFactory> factory,
+        gboolean Decryptor::Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
             const std::string& keysystem,
             const std::string& origin,
             BufferView& initData)
         {
-            _factory = std::move(factory);
+            _exchanger = std::move(exchange);
             return SetupOCDM(keysystem, origin, initData);
         }
 
@@ -96,7 +95,9 @@ namespace CENCDecryptor {
                 return "com.widevine.alpha";
             else if (guid == "9a04f079-9840-4286-ab92-e65be0885f95")
                 return "com.microsoft.playready";
-            else
+            else if (guid == "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b")
+                return "org.w3.clearkey"
+            else 
                 return "";
         }
 
@@ -149,13 +150,12 @@ namespace CENCDecryptor {
             uint32_t result = Core::ERROR_NONE;
 
             if (keyStatus != KeyStatus::Usable) {
-                TRACE_L1("Waiting for the key to arrive with timeout: <%d>", Core::infinite);
                 result = _keyReceived.Lock(Core::infinite);
             }
             return result;
         }
 
-        Core::ProxyType<Web::Request> Decryptor::PrepareChallenge(const string& challenge)
+        Core::ProxyType<Web::Request> Decryptor::PrepareRequest(const string& challenge, const std::string& rawUrl)
         {
             size_t index = challenge.find(":Type:");
             size_t offset = 0;
@@ -167,10 +167,13 @@ namespace CENCDecryptor {
             auto requestBody(Core::ProxyType<Web::TextBody>::Create());
             std::string reqBodyStr(challenge.substr(offset));
             requestBody->assign(reqBodyStr);
-
-            request->Body<Web::TextBody>(requestBody);
+            
+            Core::URL url(rawUrl);
+            request->Host = url.Host().Value();
+            request->Path = '/' + url.Path().Value();
             request->Verb = Web::Request::HTTP_POST;
             request->Connection = Web::Request::CONNECTION_CLOSE;
+            request->Body<Web::TextBody>(requestBody);
             request->ContentType = Web::MIMETypes::MIME_TEXT_XML;
             request->ContentLength = reqBodyStr.length();
 
@@ -180,6 +183,7 @@ namespace CENCDecryptor {
         Decryptor::~Decryptor()
         {
             if (_session != nullptr) {
+                
                 _sessionLock.Lock();
 
                 opencdm_destruct_session(_session);
@@ -197,8 +201,8 @@ namespace CENCDecryptor {
             const string& challenge)
         {
             auto callback(Core::ProxyType<IExchange::ICallback>(Core::ProxyType<ResponseCallback>::Create(_session, _sessionLock)));
-            _exchanger = _factory->CreateExchange(url);
-            _exchanger->Submit(PrepareChallenge(challenge), callback, Core::infinite);
+            auto request = PrepareRequest(challenge, url);
+            _exchanger->Submit(request, callback, Core::infinite);
         }
 
         void Decryptor::KeyUpdateCallback(OpenCDMSession* session,

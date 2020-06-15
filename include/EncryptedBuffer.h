@@ -24,6 +24,12 @@
 
 namespace WPEFramework {
 namespace CENCDecryptor {
+    /**
+     * @brief Metadata wrapper for an encrypted gstreamer buffer.
+     * Aids in extracting the decryption metadata provided by upstream.
+     * The caller must ensure, that the buffer, passed during construction
+     * is valid throught the object's lifetime.
+     */
     class EncryptedBuffer {
     public:
         EncryptedBuffer() = delete;
@@ -89,6 +95,11 @@ namespace CENCDecryptor {
         }
 
     protected:
+        /**
+         * @brief Extracts decryption metadata provided by an upstream demuxer.
+         * 
+         * @param buffer Buffer to extract metadata from.
+         */
         virtual void ExtractDecryptMeta(GstBuffer* buffer)
         {
             _buffer = buffer;

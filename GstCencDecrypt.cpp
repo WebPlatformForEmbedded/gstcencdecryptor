@@ -18,15 +18,13 @@
 */
 
 #include "GstCencDecrypt.h"
-
-#include "IExchangeFactory.h"
-
-#include "ocdm/Decryptor.h"
-#include "ocdm/ExchangeFactory.h"
+#include "IGstDecryptor.h"
 
 #include <gst/base/gstbasetransform.h>
 #include <gst/gst.h>
 #include <gst/gstprotection.h>
+
+#include <core/Singleton.h>
 
 #include <map>
 
@@ -43,7 +41,7 @@ constexpr static auto clearContentTypes = { "video/mp4", "audio/mp4", "audio/mpe
 
 // TODO: This information should be returned from OpenCDM.
 static std::map<std::string, std::string> keySystems{ { "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", "com.widevine.alpha" },
-    { "9a04f079-9840-4286-ab92-e65be0885f95", "com.microsoft.playready" } };
+    { "9a04f079-9840-4286-ab92-e65be0885f95", "com.microsoft.playready" }, {"1077efec-c0b2-4d02-ace3-3c1e52e2fb4b", "org.w3.clearkey"} };
 constexpr static auto cencPrefix = "application/x-cenc";
 
 // Overwritten GstBaseTransform callbacks:
@@ -52,7 +50,7 @@ static GstCaps* TransformCaps(GstBaseTransform* trans, GstPadDirection direction
 static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event);
 static GstFlowReturn TransformIp(GstBaseTransform* trans, GstBuffer* buffer);
 
-static void AddCapsForKeysystem(GstCaps*& caps, const string& keysystem)
+static void AddCapsForKeysystem(GstCaps*& caps, const std::string& keysystem)
 {
     for (auto& type : clearContentTypes) {
         gst_caps_append_structure(caps,
@@ -91,8 +89,10 @@ void Finalize(GObject* object)
     GST_DEBUG_OBJECT(cencdecrypt, "finalize");
 
     cencdecrypt->_impl->_decryptor.reset();
-
+   
     G_OBJECT_CLASS(gst_cencdecrypt_parent_class)->finalize(object);
+
+    WPEFramework::Core::Singleton::Dispose();
 }
 
 static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)
@@ -106,7 +106,7 @@ static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)
         gst_pad_template_new("sink", GST_PAD_SINK, GST_PAD_ALWAYS, SinkCaps(klass)));
 
     gst_element_class_set_static_metadata(GST_ELEMENT_CLASS(klass),
-        "FIXME Long name", GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "FIXME Description",
+        "CENC decryptor", GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "Decrypts content with local instance of OpenCDM",
         "FIXME <fixme@example.com>");
 
     G_OBJECT_CLASS(klass)->finalize = Finalize;
@@ -207,7 +207,7 @@ static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event)
         BufferView initDataView(initData, GST_MAP_READ);
 
         gboolean result = cencdecrypt->_impl->_decryptor->Initialize(
-            IExchangeFactory::Create(),
+            IExchange::Create(),
             cencdecrypt->_impl->_keySystem,
             std::string(origin),
             initDataView);
@@ -237,20 +237,20 @@ static gboolean plugin_init(GstPlugin* plugin)
 }
 
 #ifndef VERSION
-#define VERSION "0.0.FIXME"
+#define VERSION "0.2"
 #endif
 #ifndef PACKAGE
-#define PACKAGE "FIXME_package"
+#define PACKAGE "FIXME_PACKAGE"
 #endif
 #ifndef PACKAGE_NAME
-#define PACKAGE_NAME "FIXME_package_name"
+#define PACKAGE_NAME "gstcencdecryptor"
 #endif
 #ifndef GST_PACKAGE_ORIGIN
-#define GST_PACKAGE_ORIGIN "http://FIXME.org/"
+#define GST_PACKAGE_ORIGIN "https://github.com/WebPlatformForEmbedded/gstcencdecryptor/"
 #endif
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     cencdecrypt,
-    "FIXME plugin description",
+    "Decryptor plugin using a local instance of OpenCDM",
     plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
