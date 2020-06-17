@@ -32,7 +32,7 @@ namespace CENCDecryptor {
         void ResponseCallback::Response(Core::ProxyType<Web::Request> req,
             Core::ProxyType<Web::Response> res)
         {
-            ASSERT(_session != nullptr)
+            ASSERT(_session != nullptr);
             if (req.IsValid() && res->HasBody()) {
                 Core::ProxyType<Web::TextBody> body = res->Body<Web::TextBody>();
                 auto keyResponse = reinterpret_cast<const uint8_t*>(body->c_str());
