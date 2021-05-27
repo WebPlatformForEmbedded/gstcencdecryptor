@@ -56,3 +56,5 @@ target_link_libraries(${PROJECT_NAME}
         ${NAMESPACE}Core::${NAMESPACE}Core
         ${GST_LIBRARIES}
         gstcencdecrypt_ocdm)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)
