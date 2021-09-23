@@ -1,12 +1,6 @@
 # gstcencdecryptor
-:fireworks: &nbsp; Gstreamer plugin to satisfy all your basic cenc decryption needs. :fireworks:
 ## Milestones
-- [x] Clear content passthrough
-- [x] Decryption of content with a single encrypted stream 
-- [x] Useable as a standalone gstreamer plugin (with gst-* tools)
-- [ ] Support the VP9 encoding
 - [ ] Decryption of sources with multiple encrypted streams
-
 
 ## Overview
 ### Usage
@@ -32,8 +26,6 @@ The *cencdecrypt* element provides the means for testing encrypted content playb
 ## Content cheatsheet
 :warning: &nbsp; The element does not support handling manifest files, so you'll have to use packaged .mp4 files with complete PSSH boxes. :warning:
 ### Playready
-Since this plugin heavily relies on the [*OpenCDM server*](https://github.com/rdkcentral/ThunderNanoServices/blob/master/OpenCDMi/doc/OpenCDMiPlugin.md), it's worth mentioning that it doesn't support parsing playready WRMHEADER version > 4.0. Other than that, you should be all set with the [playready test server](https://testweb.playready.microsoft.com/).
-
 - Single encrypted stream: 
 ```
 http://profficialsite.origin.mediaservices.windows.net/4e8b9b4a-ef12-4822-91cd-bb49fb8ad3c9/tears_of_steel.60s.high41.30fps.idr2.8slice.8000kbps.1920x1080.h264.cenc.unaligned.sliceheadersclear.uvu
