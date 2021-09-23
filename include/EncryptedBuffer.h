@@ -140,7 +140,7 @@ namespace CENCDecryptor {
 
         GstBuffer* _buffer;
         GstBuffer* _subSample;
-        size_t _subSampleSize;
+        guint _subSampleSize;
         GstBuffer* _initialVec;
         GstBuffer* _keyId;
 
