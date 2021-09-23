@@ -18,6 +18,7 @@
 
 find_package(ocdm REQUIRED)
 find_package(${NAMESPACE}Core REQUIRED)
+find_package(${NAMESPACE}WebSocket REQUIRED)
 
 set(GST_CENC_PLUGIN_IMPLEMENTATION gstcencdecrypt_ocdm)
 
@@ -39,4 +40,5 @@ target_sources(${GST_CENC_PLUGIN_IMPLEMENTATION}
 target_link_libraries(${GST_CENC_PLUGIN_IMPLEMENTATION}
     PRIVATE
         ${NAMESPACE}Core::${NAMESPACE}Core
+        ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket
         ocdm::ocdm)
