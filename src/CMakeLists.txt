@@ -15,30 +15,38 @@
 # Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA 02110-1301, USA.
 
-
-find_package(ocdm REQUIRED)
+find_package(WPEFramework REQUIRED)
 find_package(${NAMESPACE}Core REQUIRED)
 find_package(${NAMESPACE}WebSocket REQUIRED)
 
-set(GST_CENC_PLUGIN_IMPLEMENTATION gstcencdecrypt_ocdm)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GST 
+    REQUIRED 
+        gstreamer-1.0>=1.4
+        gstreamer-sdp-1.0>=1.4
+        gstreamer-video-1.0>=1.4
+        gstreamer-app-1.0>=1.4
+        gstreamer-base-1.0>=1.4)
 
-add_library(${GST_CENC_PLUGIN_IMPLEMENTATION} STATIC "")
 
-target_include_directories(${GST_CENC_PLUGIN_IMPLEMENTATION}
-    PRIVATE
-        ${GST_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-)
+add_library(${PROJECT_NAME} SHARED "")
 
-target_sources(${GST_CENC_PLUGIN_IMPLEMENTATION} 
-    PRIVATE
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${GST_INCLUDE_DIRS})
+
+target_sources(${PROJECT_NAME}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Decryptor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Exchanger.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ResponseCallback.cpp)
 
-
-target_link_libraries(${GST_CENC_PLUGIN_IMPLEMENTATION}
-    PRIVATE
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC
         ${NAMESPACE}Core::${NAMESPACE}Core
         ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket
-        ocdm::ocdm)
+        ${GST_LIBRARIES})
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)

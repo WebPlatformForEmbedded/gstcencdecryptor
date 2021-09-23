@@ -23,7 +23,9 @@
 #include "GstBufferView.h"
 #include "IGstDecryptor.h"
 #include "ResponseCallback.h"
+
 #include <ocdm/open_cdm.h>
+#include <ocdm/open_cdm_adapter.h>
 
 namespace WPEFramework {
 namespace CENCDecryptor {

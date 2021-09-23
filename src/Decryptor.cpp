@@ -23,8 +23,6 @@
 #include <gst/gstevent.h>
 #include <thread>
 
-#include "open_cdm_adapter.h"
-
 namespace WPEFramework {
 namespace CENCDecryptor {
     namespace OCDM {

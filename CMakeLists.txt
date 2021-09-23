@@ -19,42 +19,4 @@ cmake_minimum_required(VERSION 3.3)
 
 project(gstcencdecrypt)
 
-set(DECRYPTOR "ocdm" CACHE STRING "Decryptor implementation to use. (Default: ocdm)")
-
-find_package(WPEFramework REQUIRED)
-find_package(${NAMESPACE}Core REQUIRED)
-
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GST 
-    REQUIRED 
-        gstreamer-1.0>=1.4
-        gstreamer-sdp-1.0>=1.4
-        gstreamer-video-1.0>=1.4
-        gstreamer-app-1.0>=1.4
-        gstreamer-base-1.0>=1.4)
-
-
-add_library(${PROJECT_NAME} SHARED "")
-
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${GST_INCLUDE_DIRS})
-
-if(${DECRYPTOR} STREQUAL "ocdm")
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ocdm)
-else()
-    message(SEND_ERROR "No valid decryptor selected")
-endif()
-
-target_sources(${PROJECT_NAME}
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp)
-
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-        ${NAMESPACE}Core::${NAMESPACE}Core
-        ${GST_LIBRARIES}
-        gstcencdecrypt_ocdm)
-
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)
+add_subdirectory(src)
