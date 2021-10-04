@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "Module.h"
 #include "IExchange.h"
 #include <ocdm/open_cdm.h>
 

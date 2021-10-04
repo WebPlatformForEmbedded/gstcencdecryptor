@@ -28,25 +28,36 @@ pkg_check_modules(GST
         gstreamer-app-1.0>=1.4
         gstreamer-base-1.0>=1.4)
 
+pkg_check_modules(PC_OCDM ocdm)
+if(PC_OCDM_FOUND)
+    set(OCDM_INCLUDE_DIRS ${PC_OCDM_INCLUDE_DIRS})
+    set(OCDM_LIBRARIES ${PC_OCDM_LIBRARIES})
+    set(OCDM_LIBRARY_DIRS ${PC_OCDM_LIBRARY_DIRS})
+else()
+    message(FATAL_ERROR)
+endif()
 
 add_library(${PROJECT_NAME} SHARED "")
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${GST_INCLUDE_DIRS})
+        ${GST_INCLUDE_DIRS}
+        ${OCDM_INCLUDE_DIRS})
 
 target_sources(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Decryptor.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Exchanger.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/ResponseCallback.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/ResponseCallback.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Module.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${NAMESPACE}Core::${NAMESPACE}Core
         ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket
-        ${GST_LIBRARIES})
+        ${GST_LIBRARIES}
+        ${OCDM_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)

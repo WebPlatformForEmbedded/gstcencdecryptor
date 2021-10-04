@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "Module.h"
 #include "EncryptedBuffer.h"
 #include "GstBufferView.h"
 #include "IGstDecryptor.h"
