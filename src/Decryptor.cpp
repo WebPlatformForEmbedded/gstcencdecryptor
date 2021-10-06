@@ -110,34 +110,27 @@ namespace CENCDecryptor {
             if (buffer->IsClear()) {
                 return GST_FLOW_OK;
             }
+            
+            BufferView keyIdView(buffer->KeyId(), GST_MAP_READ);
+            uint32_t waitResult = WaitForKeyId(keyIdView, Core::infinite);
+            if (waitResult == Core::ERROR_NONE) {
 
-            if (buffer->IsValid()) {
-                BufferView keyIdView(buffer->KeyId(), GST_MAP_READ);
-                uint32_t waitResult = WaitForKeyId(keyIdView, Core::infinite);
-                if (waitResult == Core::ERROR_NONE) {
+                _sessionLock.Lock();
 
-                    _sessionLock.Lock();
+                OpenCDMError result = opencdm_gstreamer_session_decrypt(_session,
+                    buffer->Buffer(),
+                    buffer->SubSample(),
+                    buffer->SubSampleCount(),
+                    buffer->IV(),
+                    buffer->KeyId(),
+                    0);
 
-                    OpenCDMError result = opencdm_gstreamer_session_decrypt(_session,
-                        buffer->Buffer(),
-                        buffer->SubSample(),
-                        buffer->SubSampleCount(),
-                        buffer->IV(),
-                        buffer->KeyId(),
-                        0);
-
-                    _sessionLock.Unlock();
-
-                    buffer->StripProtection();
-
-                    return result != OpenCDMError::ERROR_NONE ? GST_FLOW_NOT_SUPPORTED : GST_FLOW_OK;
-                } else {
-                    TRACE_L1("Waiting for key failed with: <%d>", waitResult);
-                    buffer->StripProtection();
-                    return GST_FLOW_NOT_SUPPORTED;
-                }
+                _sessionLock.Unlock();
+        
+                buffer->StripProtection();
+                return result != OpenCDMError::ERROR_NONE ? GST_FLOW_NOT_SUPPORTED : GST_FLOW_OK;
             } else {
-                TRACE_L1("Invalid decryption metadata.");
+                fprintf(stderr, "Waiting for key failed with: <%d>", waitResult);
                 buffer->StripProtection();
                 return GST_FLOW_NOT_SUPPORTED;
             }
