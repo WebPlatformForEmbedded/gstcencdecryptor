@@ -40,7 +40,7 @@ namespace CENCDecryptor {
 
             ~Decryptor() override;
 
-            gboolean Initialize(std::unique_ptr<CENCDecryptor::IExchange>,
+            IGstDecryptor::Status Initialize(std::unique_ptr<CENCDecryptor::IExchange>,
                 const std::string& keysystem,
                 const std::string& origin,
                 BufferView& initData) override;

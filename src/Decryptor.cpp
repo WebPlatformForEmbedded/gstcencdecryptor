@@ -40,13 +40,19 @@ namespace CENCDecryptor {
         {
         }
 
-        gboolean Decryptor::Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
+        IGstDecryptor::Status Decryptor::Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
             const std::string& keysystem,
             const std::string& origin,
             BufferView& initData)
         {
-            _exchanger = std::move(exchange);
-            return SetupOCDM(keysystem, origin, initData);
+            if(opencdm_is_type_supported(keysystem.c_str(), "")) {
+                _exchanger = std::move(exchange);
+                return SetupOCDM(keysystem, origin, initData) ? 
+                    IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
+
+            } else {
+                return IGstDecryptor::Status::ERROR_KEYSYSTEM_NOT_SUPPORTED;
+            }
         }
 
         bool Decryptor::SetupOCDM(const std::string& keysystem,

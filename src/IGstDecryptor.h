@@ -36,18 +36,35 @@ namespace CENCDecryptor {
      */
     class IGstDecryptor {
     public:
+
+        enum class Status {
+            SUCCESS,
+            ERROR_KEYSYSTEM_NOT_SUPPORTED,
+            ERROR_INITIALIZE_FAILURE
+        };
+
         static std::unique_ptr<IGstDecryptor> Create();
 
         /**
-         * @brief Provides source content / stream metadata to the CDMi.
+         * @brief Initializes MediaSystem and MediaSession objects.
+         * 
+         * This function should trigger the process of a license acquisition,
+         * which will allow for the subsequent Decrypt calls to succeed.
+         * The license acquisition does not have to finish before this call ends.
+         * 
+         * Does not need to be thread safe, the calling context makes sure that
+         * only a single thread at a time calls this.
+         * 
+         * Will be called multiple times if the function returns ERROR_KEYSYSTEM_NOT_SUPPORTED
+         * and the asset has multi-DRM support.
          * 
          * @param factory IExchange used for license acquisition.
          * @param keysystem Keysytem uuid using which content was encrypted. 
          * @param origin TODO
          * @param initData Content metadata contatining E.g. a PSSH box.
-         * @return gboolean Whether intialization of CDMi has succeeded.
+         * @return SUCCESS, ERROR_KEYSYSTEM_NOT_SUPPORTED, ERROR_INITIALIZE_FAILURE.
          */
-        virtual gboolean Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
+        virtual IGstDecryptor::Status Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
             const std::string& keysystem,
             const std::string& origin,
             BufferView& initData) = 0;

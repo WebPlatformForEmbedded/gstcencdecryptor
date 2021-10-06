@@ -27,6 +27,7 @@
 #include <core/Singleton.h>
 
 #include <map>
+#include <mutex>
 
 using namespace WPEFramework::CENCDecryptor;
 
@@ -80,6 +81,8 @@ static GstCaps* SrcCaps()
 struct GstCencDecryptImpl {
     std::unique_ptr<IGstDecryptor> _decryptor;
     std::string _keySystem;
+    std::mutex _initLock;
+    bool _isDecryptorInitialized;
 };
 
 void Finalize(GObject* object)
@@ -198,22 +201,30 @@ static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event)
     GST_DEBUG_OBJECT(cencdecrypt, "sink_event");
     switch (GST_EVENT_TYPE(event)) {
     case GST_EVENT_PROTECTION: {
-        const char *systemId, *origin;
-        GstBuffer* initData;
+        
+        std::lock_guard<std::mutex> lk(cencdecrypt->_impl->_initLock);
+        if(!cencdecrypt->_impl->_isDecryptorInitialized) {
+            const char *systemId, *origin;
+            GstBuffer* initData;
 
-        gst_event_parse_protection(event, &systemId, &initData, &origin);
-        cencdecrypt->_impl->_keySystem = std::string(systemId);
+            gst_event_parse_protection(event, &systemId, &initData, &origin);
+            cencdecrypt->_impl->_keySystem = std::string(systemId);
+            BufferView initDataView(initData, GST_MAP_READ);
 
-        BufferView initDataView(initData, GST_MAP_READ);
+            auto result = cencdecrypt->_impl->_decryptor->Initialize(
+                IExchange::Create(),
+                cencdecrypt->_impl->_keySystem,
+                std::string(origin ? origin : ""),
+                initDataView);
 
-        gboolean result = cencdecrypt->_impl->_decryptor->Initialize(
-            IExchange::Create(),
-            cencdecrypt->_impl->_keySystem,
-            std::string(origin),
-            initDataView);
+            cencdecrypt->_impl->_isDecryptorInitialized = (result == IGstDecryptor::Status::SUCCESS);
+            GST_INFO_OBJECT(cencdecrypt, 
+                "Initialize decryptor with keysystem <%s> and initdata <%"GST_PTR_FORMAT">, result: %d", 
+                systemId, initData, result);
+        }
 
         gst_event_unref(event);
-        return result;
+        return true;
     }
     default: {
         return GST_BASE_TRANSFORM_CLASS(gst_cencdecrypt_parent_class)->sink_event(trans, event);
@@ -225,7 +236,7 @@ static GstFlowReturn TransformIp(GstBaseTransform* trans, GstBuffer* buffer)
 {
     GstCencDecrypt* cencdecrypt = GST_CENCDECRYPT(trans);
 
-    GST_DEBUG_OBJECT(cencdecrypt, "transform_ip");
+    GST_DEBUG_OBJECT(cencdecrypt, "Processing encrypted buffer %"GST_PTR_FORMAT, buffer);
     auto encryptedBuffer = std::make_shared<EncryptedBuffer>(buffer);
     return cencdecrypt->_impl->_decryptor->Decrypt(encryptedBuffer);
 }

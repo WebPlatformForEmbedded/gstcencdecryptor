@@ -18,6 +18,7 @@
 */
 
 #include "ResponseCallback.h"
+#include <string>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
