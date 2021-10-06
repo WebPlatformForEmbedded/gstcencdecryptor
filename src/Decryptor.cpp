@@ -166,10 +166,12 @@ namespace CENCDecryptor {
             std::string reqBodyStr(challenge.substr(offset));
             requestBody->assign(reqBodyStr);
             
-            Core::URL url(rawUrl);
+            const char* overrideUrl = std::getenv("OVERRIDE_LA_URL");
+            Core::URL url(overrideUrl == nullptr ? rawUrl : overrideUrl);
             request->Host = url.Host().Value();
             request->Path = '/' + url.Path().Value();
             request->Verb = Web::Request::HTTP_POST;
+            request->Query = url.Query();
             request->Connection = Web::Request::CONNECTION_CLOSE;
             request->Body<Web::TextBody>(requestBody);
             request->ContentType = Web::MIMETypes::MIME_TEXT_XML;
