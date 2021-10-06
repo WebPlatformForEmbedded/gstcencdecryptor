@@ -71,7 +71,7 @@ namespace CENCDecryptor {
 
             Core::NodeId remoteNode(_request->Host.Value().c_str(), 80, Core::NodeId::TYPE_IPV4);
             if (remoteNode.IsValid() == false) {
-                TRACE_L1("Connection to %s unavailable", _request->Host.Value().c_str());
+                fprintf(stderr, "Connection to %s unavailable", _request->Host.Value().c_str());
             } else {
 
                 Link().RemoteNode(remoteNode);
@@ -81,7 +81,7 @@ namespace CENCDecryptor {
                 if (result != Core::ERROR_NONE) {
                     _resReceived.Lock(timeout);
                 } else {
-                    TRACE_L1("Failed to open the connection to LA server: <%d>", result);
+                    fprintf(stderr, "Failed to open the connection to LA server: <%d>", result);
                 }
             }
         }
@@ -132,14 +132,12 @@ namespace CENCDecryptor {
                 requestData.licenseHandler->Response(requestData.licenseRequest,
                     _challenger.Response());
             }
-
-            return Core::ERROR_NONE;
+            return Core::infinite;
         }
 
         Exchanger::QueueWorker::~QueueWorker()
         {
             this->Stop();
-            TRACE_L1("Stopped queue worker");
         }
     }
 }

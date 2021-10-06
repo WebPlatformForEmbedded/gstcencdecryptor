@@ -38,14 +38,12 @@ G_DEFINE_TYPE_WITH_CODE(GstCencDecrypt, gst_cencdecrypt, GST_TYPE_BASE_TRANSFORM
     GST_DEBUG_CATEGORY_INIT(gst_cencdecrypt_debug_category, "cencdecrypt", 0,
         "debug category for cencdecrypt element"));
 
-constexpr static auto clearContentTypes = { "video/mp4", "audio/mp4", "audio/mpeg", "video/x-h264" };
+constexpr static auto clearContentTypes = { "video/mp4", "audio/mp4", "audio/mpeg", "video/x-h264", "video/x-h265", "video/x-vp9" };
 
-// TODO: This information should be returned from OpenCDM.
 static std::map<std::string, std::string> keySystems{ { "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", "com.widevine.alpha" },
     { "9a04f079-9840-4286-ab92-e65be0885f95", "com.microsoft.playready" }, {"1077efec-c0b2-4d02-ace3-3c1e52e2fb4b", "org.w3.clearkey"} };
 constexpr static auto cencPrefix = "application/x-cenc";
 
-// Overwritten GstBaseTransform callbacks:
 static GstCaps* TransformCaps(GstBaseTransform* trans, GstPadDirection direction,
     GstCaps* caps, GstCaps* filter);
 static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event);
@@ -110,7 +108,7 @@ static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)
 
     gst_element_class_set_static_metadata(GST_ELEMENT_CLASS(klass),
         "CENC decryptor", GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "Decrypts content with local instance of OpenCDM",
-        "FIXME <fixme@example.com>");
+        "FIXME <k.plata@metrological.com>");
 
     G_OBJECT_CLASS(klass)->finalize = Finalize;
 
@@ -251,7 +249,7 @@ static gboolean plugin_init(GstPlugin* plugin)
 #define VERSION "0.2"
 #endif
 #ifndef PACKAGE
-#define PACKAGE "FIXME_PACKAGE"
+#define PACKAGE "gstcencdecryptor"
 #endif
 #ifndef PACKAGE_NAME
 #define PACKAGE_NAME "gstcencdecryptor"

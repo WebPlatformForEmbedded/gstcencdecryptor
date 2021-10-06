@@ -80,12 +80,12 @@ namespace CENCDecryptor {
                     _sessionLock.Unlock();
 
                     if (ocdmResult != OpenCDMError::ERROR_NONE) {
-                        TRACE_L1("Failed to construct session with error: <%d>", ocdmResult);
+                        fprintf(stderr, "Failed to construct session with error: <%d>", ocdmResult);
                         return false;
                     }
 
                 } else {
-                    TRACE_L1("Cannot construct opencdm_system for <%s> keysystem", keysystem.c_str());
+                    fprintf(stderr, "Cannot construct opencdm_system for <%s> keysystem", keysystem.c_str());
                     return false;
                 }
             }
