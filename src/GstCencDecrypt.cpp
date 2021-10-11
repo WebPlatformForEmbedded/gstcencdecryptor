@@ -24,8 +24,6 @@
 #include <gst/gst.h>
 #include <gst/gstprotection.h>
 
-#include <core/Singleton.h>
-
 #include <map>
 #include <mutex>
 
@@ -93,8 +91,6 @@ void Finalize(GObject* object)
     cencdecrypt->_impl->_decryptor.reset();
 
     G_OBJECT_CLASS(gst_cencdecrypt_parent_class)->finalize(object);
-
-    WPEFramework::Core::Singleton::Dispose();
 }
 
 static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)

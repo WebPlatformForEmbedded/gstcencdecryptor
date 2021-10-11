@@ -5,6 +5,7 @@
 #endif
 
 #include <core/core.h>
+#include <core/Singleton.h>
 
 #undef EXTERNAL
 #define EXTERNAL

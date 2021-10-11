@@ -19,4 +19,6 @@ cmake_minimum_required(VERSION 3.3)
 
 project(gstcencdecrypt)
 
+set(GSTCENCDECRYPT_IMPLEMENTATION "ocdm" CACHE STRING "Defines what implementation to use")
+
 add_subdirectory(src)

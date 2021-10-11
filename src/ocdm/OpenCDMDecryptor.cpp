@@ -17,7 +17,7 @@
  * Boston, MA 02110-1301, USA.
 */
 
-#include "Decryptor.h"
+#include "OpenCDMDecryptor.h"
 
 #include <gst/gstbuffer.h>
 #include <gst/gstevent.h>
@@ -200,6 +200,8 @@ namespace CENCDecryptor {
             if (_system != nullptr) {
                 opencdm_destruct_system(_system);
             }
+
+            WPEFramework::Core::Singleton::Dispose();
         }
     }
 
