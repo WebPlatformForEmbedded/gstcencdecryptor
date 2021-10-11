@@ -61,8 +61,7 @@ namespace CENCDecryptor {
                 auto domainName = GetDomainName(keysystem.c_str());
                 _system = opencdm_create_system(domainName.c_str());
                 if (_system != nullptr) {
-
-                    _sessionLock.Lock();
+                    std::lock_guard<std::mutex> lk(_sessionMutex);
 
                     OpenCDMError ocdmResult = opencdm_construct_session(_system,
                         LicenseType::Temporary,
@@ -74,8 +73,6 @@ namespace CENCDecryptor {
                         &_callbacks,
                         this,
                         &_session);
-
-                    _sessionLock.Unlock();
 
                     if (ocdmResult != OpenCDMError::ERROR_NONE) {
                         fprintf(stderr, "Failed to construct session with error: <%d>", ocdmResult);
@@ -112,7 +109,7 @@ namespace CENCDecryptor {
             uint32_t waitResult = WaitForKeyId(keyIdView, Core::infinite);
             if (waitResult == Core::ERROR_NONE) {
 
-                _sessionLock.Lock();
+                std::lock_guard<std::mutex> lk(_sessionMutex);
 
                 OpenCDMError result = opencdm_gstreamer_session_decrypt(_session,
                     buffer->Buffer(),
@@ -121,8 +118,6 @@ namespace CENCDecryptor {
                     buffer->IV(),
                     buffer->KeyId(),
                     0);
-
-                _sessionLock.Unlock();
         
                 buffer->StripProtection();
                 return result != OpenCDMError::ERROR_NONE ? GST_FLOW_NOT_SUPPORTED : GST_FLOW_OK;
@@ -135,11 +130,9 @@ namespace CENCDecryptor {
 
         uint32_t Decryptor::WaitForKeyId(BufferView& keyId, uint32_t timeout)
         {
-            _sessionLock.Lock();
-
+            std::unique_lock<std::mutex> lk(_sessionMutex);
             KeyStatus keyStatus = opencdm_session_status(_session, keyId.Raw(), keyId.Size());
-
-            _sessionLock.Unlock();
+            lk.unlock();
 
             uint32_t result = Core::ERROR_NONE;
 
