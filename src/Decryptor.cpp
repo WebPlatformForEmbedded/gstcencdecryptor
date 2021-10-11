@@ -33,20 +33,20 @@ namespace CENCDecryptor {
             , _keyReceived(false, true)
             , _sessionMutex()
         {
-            auto processChallengeCallback = [](OpenCDMSession *session, void *userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength){
-                Decryptor *decryptor = reinterpret_cast<Decryptor *>(userData);
-                string challengeData(reinterpret_cast<const char *>(challenge), challengeLength);
+            auto processChallengeCallback = [](OpenCDMSession* session, void* userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength) {
+                Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
+                string challengeData(reinterpret_cast<const char*>(challenge), challengeLength);
                 decryptor->_licenseRequest = std::move(decryptor->CreateLicenseRequest(challengeData, url));
                 decryptor->_licenseRequest->Submit();
             };
-            auto keyUpdateCallback = [](OpenCDMSession *session, void *userData, const uint8_t keyId[], const uint8_t length) {};
-            auto errorMessageCallback = [](OpenCDMSession *session, void *userData, const char message[]) {};
-            auto keysUpdatedCallback = [](const OpenCDMSession *session, void *userData) {
-                Decryptor *decryptor = reinterpret_cast<Decryptor *>(userData);
+            auto keyUpdateCallback = [](OpenCDMSession* session, void* userData, const uint8_t keyId[], const uint8_t length) {};
+            auto errorMessageCallback = [](OpenCDMSession* session, void* userData, const char message[]) {};
+            auto keysUpdatedCallback = [](const OpenCDMSession* session, void* userData) {
+                Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
                 decryptor->_keyReceived.SetEvent();
             };
 
-            _callbacks = {processChallengeCallback, keyUpdateCallback, errorMessageCallback, keysUpdatedCallback};
+            _callbacks = { processChallengeCallback, keyUpdateCallback, errorMessageCallback, keysUpdatedCallback };
         }
 
         IGstDecryptor::Status Decryptor::Initialize(const std::string& keysystem,
@@ -54,10 +54,9 @@ namespace CENCDecryptor {
             const std::string& initDataType,
             BufferView& initData)
         {
-            if(!opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
+            if (!opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
 
-                return SetupOCDM(keysystem, origin, initDataType, initData) ? 
-                    IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
+                return SetupOCDM(keysystem, origin, initDataType, initData) ? IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
 
             } else {
                 return IGstDecryptor::Status::ERROR_KEYSYSTEM_NOT_SUPPORTED;
@@ -107,7 +106,7 @@ namespace CENCDecryptor {
                 return "com.microsoft.playready";
             else if (guid == "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b")
                 return "org.w3.clearkey";
-            else 
+            else
                 return "";
         }
 
@@ -116,7 +115,7 @@ namespace CENCDecryptor {
             if (buffer->IsClear()) {
                 return GST_FLOW_OK;
             }
-            
+
             BufferView keyIdView(buffer->KeyId(), GST_MAP_READ);
             uint32_t waitResult = WaitForKeyId(keyIdView, Core::infinite);
             if (waitResult == Core::ERROR_NONE) {
@@ -130,7 +129,7 @@ namespace CENCDecryptor {
                     buffer->IV(),
                     buffer->KeyId(),
                     0);
-        
+
                 buffer->StripProtection();
                 return result != OpenCDMError::ERROR_NONE ? GST_FLOW_NOT_SUPPORTED : GST_FLOW_OK;
             } else {
@@ -160,22 +159,21 @@ namespace CENCDecryptor {
             size_t offset = (index != std::string::npos) ? index + strlen(":Type:") : 0;
 
             std::string requestBody(challenge.substr(offset));
-            std::vector<uint8_t> bodyBytes(requestBody.begin(), requestBody.end());  
+            std::vector<uint8_t> bodyBytes(requestBody.begin(), requestBody.end());
 
             const char* overrideUrl = std::getenv("OVERRIDE_LA_URL");
             std::string url(overrideUrl == nullptr ? rawUrl : overrideUrl);
 
-            std::vector<std::string> headers = {"Content-Type: text/xml", "Connection: CLOSE"};
+            std::vector<std::string> headers = { "Content-Type: text/xml", "Connection: CLOSE" };
             auto responseCallback = [&](uint32_t code, const std::string& response) {
                 this->ProcessLicenseResponse(code, response);
             };
             return std::unique_ptr<LicenseRequest>(new LicenseRequest(url, bodyBytes, headers, responseCallback));
         }
 
-        void Decryptor::ProcessLicenseResponse(uint32_t code, const std::string &response)
+        void Decryptor::ProcessLicenseResponse(uint32_t code, const std::string& response)
         {
-            if (code == 200)
-            {
+            if (code == 200) {
                 // Some keysystems (usually WV) add additional information about the keyId's
                 // in the beggining of the body. Let's skip past that bit if it's detected:
                 std::string drmHeadAnchor = "\r\n\r\n";
@@ -183,12 +181,10 @@ namespace CENCDecryptor {
                 auto newIndex = (wvDrmHeadPos != std::string::npos) ? (wvDrmHeadPos + drmHeadAnchor.length()) : 0;
 
                 std::vector<uint8_t> bytes(response.begin(), response.end());
-                
+
                 std::lock_guard<std::mutex> lk(_sessionMutex);
                 OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
-            }
-            else
-            {
+            } else {
                 fprintf(stderr, "Invalid license response code received: %d \n", code);
             }
         }

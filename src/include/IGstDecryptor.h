@@ -35,7 +35,6 @@ namespace CENCDecryptor {
      */
     class IGstDecryptor {
     public:
-
         enum class Status {
             SUCCESS,
             ERROR_KEYSYSTEM_NOT_SUPPORTED,
@@ -68,7 +67,8 @@ namespace CENCDecryptor {
         virtual IGstDecryptor::Status Initialize(const std::string& keysystem,
             const std::string& origin,
             const std::string& initDataType,
-            BufferView& initData) = 0;
+            BufferView& initData)
+            = 0;
 
         /**
          * @brief Decrypts the specified EncryptedBuffer in-place.

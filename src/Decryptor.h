@@ -52,9 +52,9 @@ namespace CENCDecryptor {
             GstFlowReturn Decrypt(std::shared_ptr<EncryptedBuffer>) override;
 
         private:
-            bool SetupOCDM(const std::string& keysystem, 
-                const std::string& origin, 
-                const std::string& initDataType, 
+            bool SetupOCDM(const std::string& keysystem,
+                const std::string& origin,
+                const std::string& initDataType,
                 BufferView& initData);
             std::string GetDomainName(const std::string& guid);
             uint32_t WaitForKeyId(BufferView& keyId, uint32_t timeout);
