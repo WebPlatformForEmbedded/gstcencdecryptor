@@ -56,44 +56,36 @@ namespace CENCDecryptor {
         {
             if (!opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
 
-                return SetupOCDM(keysystem, origin, initDataType, initData) ? IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
+                return InitializeOpenCDM(keysystem, origin, initDataType, initData) ? IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
 
             } else {
                 return IGstDecryptor::Status::ERROR_KEYSYSTEM_NOT_SUPPORTED;
             }
         }
 
-        bool Decryptor::SetupOCDM(const std::string& keysystem,
+        bool Decryptor::InitializeOpenCDM(const std::string& keysystem,
             const std::string& origin,
             const std::string& initDataType,
             BufferView& initData)
         {
-            if (_system == nullptr) {
-                auto domainName = GetDomainName(keysystem.c_str());
-                _system = opencdm_create_system(domainName.c_str());
-                if (_system != nullptr) {
-                    std::lock_guard<std::mutex> lk(_sessionMutex);
+            auto domainName = GetDomainName(keysystem.c_str());
+            _system = opencdm_create_system(domainName.c_str());
+            std::lock_guard<std::mutex> lk(_sessionMutex);
 
-                    OpenCDMError ocdmResult = opencdm_construct_session(_system,
-                        LicenseType::Temporary,
-                        initDataType.c_str(),
-                        initData.Raw(),
-                        static_cast<uint16_t>(initData.Size()),
-                        nullptr,
-                        0,
-                        &_callbacks,
-                        this,
-                        &_session);
+            OpenCDMError ocdmResult = opencdm_construct_session(_system,
+                LicenseType::Temporary,
+                initDataType.c_str(),
+                initData.Raw(),
+                static_cast<uint16_t>(initData.Size()),
+                nullptr,
+                0,
+                &_callbacks,
+                this,
+                &_session);
 
-                    if (ocdmResult != OpenCDMError::ERROR_NONE) {
-                        fprintf(stderr, "Failed to construct session with error: <%d>", ocdmResult);
-                        return false;
-                    }
-
-                } else {
-                    fprintf(stderr, "Cannot construct opencdm_system for <%s> keysystem", keysystem.c_str());
-                    return false;
-                }
+            if (ocdmResult != OpenCDMError::ERROR_NONE) {
+                fprintf(stderr, "Failed to construct session with error: <%d>", ocdmResult);
+                return false;
             }
             return true;
         }
