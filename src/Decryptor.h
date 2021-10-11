@@ -52,13 +52,10 @@ namespace CENCDecryptor {
 
         private:
             bool SetupOCDM(const std::string& keysystem, const std::string& origin, BufferView& initData);
-
             std::string GetDomainName(const std::string& guid);
-
             uint32_t WaitForKeyId(BufferView& keyId, uint32_t timeout);
-
             std::unique_ptr<LicenseRequest> CreateLicenseRequest(const string& challenge, const std::string& url);
-            void ProcessResponse(uint32_t code, const std::string& response);
+            void ProcessLicenseResponse(uint32_t code, const std::string& response);
 
             OpenCDMSystem* _system;
             OpenCDMSession* _session;
@@ -67,51 +64,6 @@ namespace CENCDecryptor {
             Core::Event _keyReceived;
             std::unique_ptr<LicenseRequest> _licenseRequest;
             std::mutex _sessionMutex;
-
-        private:
-            static void process_challenge_callback(OpenCDMSession* session,
-                void* userData,
-                const char url[],
-                const uint8_t challenge[],
-                const uint16_t challengeLength)
-            {
-                Decryptor* comm = reinterpret_cast<Decryptor*>(userData);
-                string challengeData(reinterpret_cast<const char*>(challenge), challengeLength);
-                comm->ProcessChallengeCallback(session, std::string(url), challengeData);
-            }
-
-            static void key_update_callback(OpenCDMSession* session,
-                void* userData,
-                const uint8_t keyId[],
-                const uint8_t length)
-            {
-                Decryptor* comm = reinterpret_cast<Decryptor*>(userData);
-                comm->KeyUpdateCallback(session, userData, keyId, length);
-            }
-
-            static void error_message_callback(OpenCDMSession* session,
-                void* userData,
-                const char message[])
-            {
-                Decryptor* comm = reinterpret_cast<Decryptor*>(userData);
-                comm->ErrorMessageCallback();
-            }
-
-            static void keys_updated_callback(const OpenCDMSession* session, void* userData)
-            {
-                Decryptor* comm = reinterpret_cast<Decryptor*>(userData);
-                comm->KeysUpdatedCallback();
-            }
-
-            void ProcessChallengeCallback(OpenCDMSession* session,
-                const string& url,
-                const string& challenge);
-            void KeyUpdateCallback(OpenCDMSession* session,
-                void* userData,
-                const uint8_t keyId[],
-                const uint8_t length);
-            void ErrorMessageCallback();
-            void KeysUpdatedCallback();
         };
     }
 }

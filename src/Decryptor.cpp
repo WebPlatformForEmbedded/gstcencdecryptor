@@ -30,13 +30,23 @@ namespace CENCDecryptor {
         Decryptor::Decryptor()
             : _system(nullptr)
             , _session(nullptr)
-            , _callbacks({ process_challenge_callback,
-                  key_update_callback,
-                  error_message_callback,
-                  keys_updated_callback })
             , _keyReceived(false, true)
             , _sessionMutex()
         {
+            auto processChallengeCallback = [](OpenCDMSession *session, void *userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength){
+                Decryptor *decryptor = reinterpret_cast<Decryptor *>(userData);
+                string challengeData(reinterpret_cast<const char *>(challenge), challengeLength);
+                decryptor->_licenseRequest = std::move(decryptor->CreateLicenseRequest(challengeData, url));
+                decryptor->_licenseRequest->Submit();
+            };
+            auto keyUpdateCallback = [](OpenCDMSession *session, void *userData, const uint8_t keyId[], const uint8_t length) {};
+            auto errorMessageCallback = [](OpenCDMSession *session, void *userData, const char message[]) {};
+            auto keysUpdatedCallback = [](const OpenCDMSession *session, void *userData) {
+                Decryptor *decryptor = reinterpret_cast<Decryptor *>(userData);
+                decryptor->_keyReceived.SetEvent();
+            };
+
+            _callbacks = {processChallengeCallback, keyUpdateCallback, errorMessageCallback, keysUpdatedCallback};
         }
 
         IGstDecryptor::Status Decryptor::Initialize(const std::string& keysystem,
@@ -144,10 +154,6 @@ namespace CENCDecryptor {
 
         std::unique_ptr<LicenseRequest> Decryptor::CreateLicenseRequest(const string& challenge, const std::string& rawUrl)
         {
-            // TODO: This ":Type:" string is an ugly corner case for the wv keysystem.
-            // Take this bit of code out into a in/out filter object, that will
-            // process in-place requests / responses for specific keysystems.
-            // Same goes for the license response "\r\n\r\n" string.
             size_t index = challenge.find(":Type:");
             size_t offset = (index != std::string::npos) ? index + strlen(":Type:") : 0;
 
@@ -159,12 +165,12 @@ namespace CENCDecryptor {
 
             std::vector<std::string> headers = {"Content-Type: text/xml", "Connection: CLOSE"};
             auto responseCallback = [&](uint32_t code, const std::string& response) {
-                this->ProcessResponse(code, response);
+                this->ProcessLicenseResponse(code, response);
             };
             return std::unique_ptr<LicenseRequest>(new LicenseRequest(url, bodyBytes, headers, responseCallback));
         }
 
-        void Decryptor::ProcessResponse(uint32_t code, const std::string &response)
+        void Decryptor::ProcessLicenseResponse(uint32_t code, const std::string &response)
         {
             if (code == 200)
             {
@@ -196,31 +202,6 @@ namespace CENCDecryptor {
             if (_system != nullptr) {
                 opencdm_destruct_system(_system);
             }
-        }
-
-        void Decryptor::ProcessChallengeCallback(OpenCDMSession* session,
-            const string& url,
-            const string& challenge)
-        {
-            _licenseRequest = std::move(CreateLicenseRequest(challenge, url));
-            _licenseRequest->Submit();
-        }
-
-        void Decryptor::KeyUpdateCallback(OpenCDMSession* session,
-            void* userData,
-            const uint8_t keyId[],
-            const uint8_t length)
-        {
-        }
-
-        void Decryptor::ErrorMessageCallback()
-        {
-            TRACE_L1("Error message callback not implemented in ocdm decryptor");
-        }
-
-        void Decryptor::KeysUpdatedCallback()
-        {
-            _keyReceived.SetEvent();
         }
     }
 
