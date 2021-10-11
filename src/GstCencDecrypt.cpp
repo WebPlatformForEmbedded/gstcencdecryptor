@@ -109,8 +109,8 @@ static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)
         gst_pad_template_new("sink", GST_PAD_SINK, GST_PAD_ALWAYS, SinkCaps(klass)));
 
     gst_element_class_set_static_metadata(GST_ELEMENT_CLASS(klass),
-        "CENC decryptor", GST_ELEMENT_FACTORY_KLASS_DECODER"/"GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "Decrypts content with local instance of OpenCDM",
-        "Krystian Plata <k.plata@metrological.com>");
+        "CENC decryptor", GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "Decrypts content with local instance of OpenCDM",
+        "FIXME <k.plata@metrological.com>");
 
     G_OBJECT_CLASS(klass)->finalize = Finalize;
 
@@ -275,9 +275,21 @@ static gboolean plugin_init(GstPlugin* plugin)
         GST_TYPE_CENCDECRYPT);
 }
 
+#ifndef VERSION
+#define VERSION "0.2"
+#endif
+#ifndef PACKAGE
+#define PACKAGE "gstcencdecryptor"
+#endif
+#ifndef PACKAGE_NAME
+#define PACKAGE_NAME "gstcencdecryptor"
+#endif
+#ifndef GST_PACKAGE_ORIGIN
+#define GST_PACKAGE_ORIGIN "https://github.com/WebPlatformForEmbedded/gstcencdecryptor/"
+#endif
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     cencdecrypt,
     "Decryptor plugin using a local instance of OpenCDM",
-    plugin_init, 0.1, "LGPL", "gstcencdecryptor", "https://github.com/WebPlatformForEmbedded/gstcencdecryptor/")
+    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
