@@ -35,7 +35,7 @@ namespace CENCDecryptor {
                   error_message_callback,
                   keys_updated_callback })
             , _keyReceived(false, true)
-            , _sessionLock()
+            , _sessionMutex()
         {
         }
 
@@ -183,11 +183,8 @@ namespace CENCDecryptor {
 
                 std::vector<uint8_t> bytes(response.begin(), response.end());
                 
-                _sessionLock.Lock();
-                fprintf(stderr, "\n\n cdm session update \n\n");
+                std::lock_guard<std::mutex> lk(_sessionMutex);
                 OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
-                fprintf(stderr, "\n\n cdm session update --- done\n\n");
-                _sessionLock.Unlock();
             }
             else
             {
@@ -197,14 +194,11 @@ namespace CENCDecryptor {
 
         Decryptor::~Decryptor()
         {
+            std::unique_lock<std::mutex> lk(_sessionMutex);
             if (_session != nullptr) {
-                
-                _sessionLock.Lock();
-
                 opencdm_destruct_session(_session);
-
-                _sessionLock.Unlock();
             }
+            lk.unlock();
 
             if (_system != nullptr) {
                 opencdm_destruct_system(_system);

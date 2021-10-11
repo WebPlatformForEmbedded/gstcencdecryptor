@@ -21,8 +21,6 @@
 
 #include "Module.h"
 
-#include <memory>
-
 #include "EncryptedBuffer.h"
 #include "GstBufferView.h"
 #include "IGstDecryptor.h"
@@ -30,6 +28,9 @@
 
 #include <ocdm/open_cdm.h>
 #include <ocdm/open_cdm_adapter.h>
+
+#include <memory>
+#include <mutex>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
@@ -65,7 +66,7 @@ namespace CENCDecryptor {
 
             Core::Event _keyReceived;
             std::unique_ptr<LicenseRequest> _licenseRequest;
-            mutable Core::CriticalSection _sessionLock;
+            std::mutex _sessionMutex;
 
         private:
             static void process_challenge_callback(OpenCDMSession* session,
