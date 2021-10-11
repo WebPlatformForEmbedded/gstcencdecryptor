@@ -102,10 +102,10 @@ namespace CENCDecryptor {
                 return "";
         }
 
-        GstFlowReturn Decryptor::Decrypt(std::shared_ptr<EncryptedBuffer> buffer)
+        IGstDecryptor::Status Decryptor::Decrypt(std::shared_ptr<EncryptedBuffer> buffer)
         {
             if (buffer->IsClear()) {
-                return GST_FLOW_OK;
+                return IGstDecryptor::Status::SUCCESS;
             }
 
             BufferView keyIdView(buffer->KeyId(), GST_MAP_READ);
@@ -123,11 +123,10 @@ namespace CENCDecryptor {
                     0);
 
                 buffer->StripProtection();
-                return result != OpenCDMError::ERROR_NONE ? GST_FLOW_NOT_SUPPORTED : GST_FLOW_OK;
+                return result != OpenCDMError::ERROR_NONE ? IGstDecryptor::Status::ERROR_GENERAL : IGstDecryptor::Status::SUCCESS;
             } else {
-                fprintf(stderr, "Waiting for key failed with: <%d>", waitResult);
                 buffer->StripProtection();
-                return GST_FLOW_NOT_SUPPORTED;
+                return IGstDecryptor::Status::ERROR_TIMED_OUT_WAITING_FOR_KEY;
             }
         }
 

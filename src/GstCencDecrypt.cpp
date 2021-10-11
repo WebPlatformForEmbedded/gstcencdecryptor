@@ -264,7 +264,8 @@ static GstFlowReturn TransformIp(GstBaseTransform* trans, GstBuffer* buffer)
 
     GST_DEBUG_OBJECT(cencdecrypt, "Processing encrypted buffer %" GST_PTR_FORMAT, buffer);
     auto encryptedBuffer = std::make_shared<EncryptedBuffer>(buffer);
-    return cencdecrypt->_impl->_decryptor->Decrypt(encryptedBuffer);
+    IGstDecryptor::Status result = cencdecrypt->_impl->_decryptor->Decrypt(encryptedBuffer);
+    return (result == IGstDecryptor::Status::SUCCESS) ? GST_FLOW_OK : GST_FLOW_ERROR;
 }
 
 static gboolean plugin_init(GstPlugin* plugin)

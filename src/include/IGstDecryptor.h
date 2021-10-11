@@ -39,6 +39,7 @@ namespace CENCDecryptor {
             SUCCESS,
             ERROR_KEYSYSTEM_NOT_SUPPORTED,
             ERROR_INITIALIZE_FAILURE,
+            ERROR_TIMED_OUT_WAITING_FOR_KEY,
             ERROR_GENERAL
         };
 
@@ -74,10 +75,19 @@ namespace CENCDecryptor {
          * @brief Decrypts the specified EncryptedBuffer in-place.
          * 
          * @param buffer EncryptedBuffer initialized with a GstBuffer containing
-         * encryption metadata.
-         * @return GstFlowReturn GST_FLOW_OK / GST_FLOW_NOT_SUPPORTED
+         * the encryption metadata. 
+         * 
+         * This function might be called before a key for decryption is available.
+         * In this case, it should wait until the key becomes available for decryption.
+         * The time after which a function should raise ERROR_TIMED_OUT_WAITING_FOR_KEY
+         * is decided by the implementation. 
+         * 
+         * Both ERROR_TIMED_OUT_WAITING_FOR_KEY and ERROR_GENERAL, cause the player
+         * to abort playback and exit.
+         * 
+         * @return SUCCESS, ERROR_TIMED_OUT_WAITING_FOR_KEY, ERROR_GENERAL
          */
-        virtual GstFlowReturn Decrypt(std::shared_ptr<EncryptedBuffer> buffer) = 0;
+        virtual IGstDecryptor::Status Decrypt(std::shared_ptr<EncryptedBuffer> buffer) = 0;
 
         virtual ~IGstDecryptor(){};
     };

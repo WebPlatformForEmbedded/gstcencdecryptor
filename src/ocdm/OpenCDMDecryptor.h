@@ -49,7 +49,7 @@ namespace CENCDecryptor {
                 const std::string& initDataType,
                 BufferView& initData) override;
 
-            GstFlowReturn Decrypt(std::shared_ptr<EncryptedBuffer>) override;
+            IGstDecryptor::Status Decrypt(std::shared_ptr<EncryptedBuffer>) override;
 
         private:
             bool InitializeOpenCDM(const std::string& keysystem,
