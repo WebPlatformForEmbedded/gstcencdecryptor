@@ -34,19 +34,17 @@ namespace CENCDecryptor {
                   key_update_callback,
                   error_message_callback,
                   keys_updated_callback })
-            , _exchanger(nullptr)
             , _keyReceived(false, true)
             , _sessionLock()
         {
         }
 
-        IGstDecryptor::Status Decryptor::Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
-            const std::string& keysystem,
+        IGstDecryptor::Status Decryptor::Initialize(const std::string& keysystem,
             const std::string& origin,
             BufferView& initData)
         {
-            if(opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
-                _exchanger = std::move(exchange);
+            if(!opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
+
                 return SetupOCDM(keysystem, origin, initData) ? 
                     IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
 
@@ -92,7 +90,6 @@ namespace CENCDecryptor {
             return true;
         }
 
-        // TODO: Should this be provided by the ocdm?
         std::string Decryptor::GetDomainName(const std::string& guid)
         {
             if (guid == "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed")
@@ -152,31 +149,50 @@ namespace CENCDecryptor {
             return result;
         }
 
-        Core::ProxyType<Web::Request> Decryptor::PrepareRequest(const string& challenge, const std::string& rawUrl)
+        std::unique_ptr<LicenseRequest> Decryptor::CreateLicenseRequest(const string& challenge, const std::string& rawUrl)
         {
+            // TODO: This ":Type:" string is an ugly corner case for the wv keysystem.
+            // Take this bit of code out into a in/out filter object, that will
+            // process in-place requests / responses for specific keysystems.
+            // Same goes for the license response "\r\n\r\n" string.
             size_t index = challenge.find(":Type:");
-            size_t offset = 0;
+            size_t offset = (index != std::string::npos) ? index + strlen(":Type:") : 0;
 
-            if (index != std::string::npos)
-                offset = index + strlen(":Type:");
+            std::string requestBody(challenge.substr(offset));
+            std::vector<uint8_t> bodyBytes(requestBody.begin(), requestBody.end());  
 
-            auto request(Core::ProxyType<Web::Request>::Create());
-            auto requestBody(Core::ProxyType<Web::TextBody>::Create());
-            std::string reqBodyStr(challenge.substr(offset));
-            requestBody->assign(reqBodyStr);
-            
             const char* overrideUrl = std::getenv("OVERRIDE_LA_URL");
-            Core::URL url(overrideUrl == nullptr ? rawUrl : overrideUrl);
-            request->Host = url.Host().Value();
-            request->Path = '/' + url.Path().Value();
-            request->Verb = Web::Request::HTTP_POST;
-            request->Query = url.Query();
-            request->Connection = Web::Request::CONNECTION_CLOSE;
-            request->Body<Web::TextBody>(requestBody);
-            request->ContentType = Web::MIMETypes::MIME_TEXT_XML;
-            request->ContentLength = reqBodyStr.length();
+            std::string url(overrideUrl == nullptr ? rawUrl : overrideUrl);
 
-            return request;
+            std::vector<std::string> headers = {"Content-Type: text/xml", "Connection: CLOSE"};
+            auto responseCallback = [&](uint32_t code, const std::string& response) {
+                this->ProcessResponse(code, response);
+            };
+            return std::unique_ptr<LicenseRequest>(new LicenseRequest(url, bodyBytes, headers, responseCallback));
+        }
+
+        void Decryptor::ProcessResponse(uint32_t code, const std::string &response)
+        {
+            if (code == 200)
+            {
+                // Some keysystems (usually WV) add additional information about the keyId's
+                // in the beggining of the body. Let's skip past that bit if it's detected:
+                std::string drmHeadAnchor = "\r\n\r\n";
+                size_t wvDrmHeadPos = response.find(drmHeadAnchor);
+                auto newIndex = (wvDrmHeadPos != std::string::npos) ? (wvDrmHeadPos + drmHeadAnchor.length()) : 0;
+
+                std::vector<uint8_t> bytes(response.begin(), response.end());
+                
+                _sessionLock.Lock();
+                fprintf(stderr, "\n\n cdm session update \n\n");
+                OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
+                fprintf(stderr, "\n\n cdm session update --- done\n\n");
+                _sessionLock.Unlock();
+            }
+            else
+            {
+                fprintf(stderr, "Invalid license response code received: %d \n", code);
+            }
         }
 
         Decryptor::~Decryptor()
@@ -199,9 +215,8 @@ namespace CENCDecryptor {
             const string& url,
             const string& challenge)
         {
-            auto callback(Core::ProxyType<IExchange::ICallback>(Core::ProxyType<ResponseCallback>::Create(_session, _sessionLock)));
-            auto request = PrepareRequest(challenge, url);
-            _exchanger->Submit(request, callback, Core::infinite);
+            _licenseRequest = std::move(CreateLicenseRequest(challenge, url));
+            _licenseRequest->Submit();
         }
 
         void Decryptor::KeyUpdateCallback(OpenCDMSession* session,

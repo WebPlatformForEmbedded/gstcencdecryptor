@@ -17,7 +17,7 @@
 
 find_package(WPEFramework REQUIRED)
 find_package(${NAMESPACE}Core REQUIRED)
-find_package(${NAMESPACE}WebSocket REQUIRED)
+find_package(CURL REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GST 
@@ -41,23 +41,23 @@ add_library(${PROJECT_NAME} SHARED "")
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/
         ${GST_INCLUDE_DIRS}
-        ${OCDM_INCLUDE_DIRS})
+        ${OCDM_INCLUDE_DIRS}
+        ${CURL_INCLUDE_DIRS})
 
 target_sources(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/GstCencDecrypt.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Decryptor.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Exchanger.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/ResponseCallback.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Module.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
         ${NAMESPACE}Core::${NAMESPACE}Core
-        ${NAMESPACE}WebSocket::${NAMESPACE}WebSocket
         ${GST_LIBRARIES}
-        ${OCDM_LIBRARIES})
+        ${OCDM_LIBRARIES}
+        ${CURL_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/gstreamer-1.0)
