@@ -21,7 +21,6 @@
 
 #include "EncryptedBuffer.h"
 #include "GstBufferView.h"
-#include "IExchange.h"
 
 #include <gst/gstbuffer.h>
 #include <gst/gstevent.h>
@@ -65,8 +64,7 @@ namespace CENCDecryptor {
          * @param initData Content metadata contatining E.g. a PSSH box.
          * @return SUCCESS, ERROR_KEYSYSTEM_NOT_SUPPORTED, ERROR_INITIALIZE_FAILURE.
          */
-        virtual IGstDecryptor::Status Initialize(std::unique_ptr<CENCDecryptor::IExchange> exchange,
-            const std::string& keysystem,
+        virtual IGstDecryptor::Status Initialize(const std::string& keysystem,
             const std::string& origin,
             BufferView& initData) = 0;
 

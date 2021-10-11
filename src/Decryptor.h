@@ -20,13 +20,17 @@
 #pragma once
 
 #include "Module.h"
+
 #include "EncryptedBuffer.h"
 #include "GstBufferView.h"
 #include "IGstDecryptor.h"
-#include "ResponseCallback.h"
+#include "LicenseRequest.h"
 
 #include <ocdm/open_cdm.h>
 #include <ocdm/open_cdm_adapter.h>
+
+#include <memory>
+#include <mutex>
 
 namespace WPEFramework {
 namespace CENCDecryptor {
@@ -40,8 +44,7 @@ namespace CENCDecryptor {
 
             ~Decryptor() override;
 
-            IGstDecryptor::Status Initialize(std::unique_ptr<CENCDecryptor::IExchange>,
-                const std::string& keysystem,
+            IGstDecryptor::Status Initialize(const std::string& keysystem,
                 const std::string& origin,
                 BufferView& initData) override;
 
@@ -54,15 +57,16 @@ namespace CENCDecryptor {
 
             uint32_t WaitForKeyId(BufferView& keyId, uint32_t timeout);
 
-            Core::ProxyType<Web::Request> PrepareRequest(const string& challenge, const std::string& url);
+            std::unique_ptr<LicenseRequest> CreateLicenseRequest(const string& challenge, const std::string& url);
+            void ProcessResponse(uint32_t code, const std::string& response);
 
             OpenCDMSystem* _system;
             OpenCDMSession* _session;
             OpenCDMSessionCallbacks _callbacks;
 
-            std::unique_ptr<CENCDecryptor::IExchange> _exchanger;
             Core::Event _keyReceived;
-            mutable Core::CriticalSection _sessionLock;
+            std::unique_ptr<LicenseRequest> _licenseRequest;
+            std::mutex _sessionMutex;
 
         private:
             static void process_challenge_callback(OpenCDMSession* session,

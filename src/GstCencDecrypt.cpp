@@ -214,7 +214,6 @@ static void InitializeDecryptor(GstCencDecrypt* cencdecrypt,
 
         BufferView initDataView(initData, GST_MAP_READ);
         auto result = cencdecrypt->_impl->_decryptor->Initialize(
-                    IExchange::Create(),
                     keySystem,
                     origin,
                     initDataView);
