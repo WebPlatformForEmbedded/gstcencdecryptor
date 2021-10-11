@@ -45,7 +45,7 @@ namespace CENCDecryptor {
             const std::string& origin,
             BufferView& initData)
         {
-            if(opencdm_is_type_supported(keysystem.c_str(), "")) {
+            if(opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
                 _exchanger = std::move(exchange);
                 return SetupOCDM(keysystem, origin, initData) ? 
                     IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;

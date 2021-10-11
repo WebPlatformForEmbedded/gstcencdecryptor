@@ -40,7 +40,8 @@ namespace CENCDecryptor {
         enum class Status {
             SUCCESS,
             ERROR_KEYSYSTEM_NOT_SUPPORTED,
-            ERROR_INITIALIZE_FAILURE
+            ERROR_INITIALIZE_FAILURE,
+            ERROR_GENERAL
         };
 
         static std::unique_ptr<IGstDecryptor> Create();
