@@ -206,7 +206,8 @@ static GstCaps* TransformCaps(GstBaseTransform* trans, GstPadDirection direction
 
 static void InitializeDecryptor(GstCencDecrypt* cencdecrypt, 
     const std::string& keySystem, 
-    const std::string& origin, 
+    const std::string& origin,
+    const std::string& initDataType,
     GstBuffer* initData)
 {
     std::lock_guard<std::mutex> lk(cencdecrypt->_impl->_initLock);
@@ -216,6 +217,7 @@ static void InitializeDecryptor(GstCencDecrypt* cencdecrypt,
         auto result = cencdecrypt->_impl->_decryptor->Initialize(
                     keySystem,
                     origin,
+                    initDataType,
                     initDataView);
 
         cencdecrypt->_impl->_isDecryptorInitialized = (result == IGstDecryptor::Status::SUCCESS);
@@ -240,15 +242,17 @@ static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event)
         // that is meant to be used by the decryptor. Because of this, we're going to try 
         // with WideVine by default and allow for overriding the UUID.
 
-        std::string keySystem;
+        std::string keySystem, initDataType;
         if(cencdecrypt->_impl->_keySystem == GST_PROTECTION_UNSPECIFIED_SYSTEM_ID) {
             auto overrideKeySystem = std::getenv("OVERRIDE_WEBM_KEYSYSTEM_UUID");
             keySystem = (overrideKeySystem != nullptr) ? overrideKeySystem : "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
+            initDataType = "webm";
         } else {
             keySystem = cencdecrypt->_impl->_keySystem;
+            initDataType = "cenc";
         }
 
-        InitializeDecryptor(cencdecrypt, keySystem, std::string(origin ? origin : ""), initData);
+        InitializeDecryptor(cencdecrypt, keySystem, origin, initDataType, initData);
 
         gst_event_unref(event);
         return true;

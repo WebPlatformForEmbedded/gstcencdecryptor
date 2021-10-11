@@ -61,11 +61,13 @@ namespace CENCDecryptor {
          * @param factory IExchange used for license acquisition.
          * @param keysystem Keysytem uuid using which content was encrypted. 
          * @param origin TODO
+         * @param initDataType Type ("webm" / "cenc") of @param initData. 
          * @param initData Content metadata contatining E.g. a PSSH box.
          * @return SUCCESS, ERROR_KEYSYSTEM_NOT_SUPPORTED, ERROR_INITIALIZE_FAILURE.
          */
         virtual IGstDecryptor::Status Initialize(const std::string& keysystem,
             const std::string& origin,
+            const std::string& initDataType,
             BufferView& initData) = 0;
 
         /**

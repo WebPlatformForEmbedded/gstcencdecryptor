@@ -46,12 +46,16 @@ namespace CENCDecryptor {
 
             IGstDecryptor::Status Initialize(const std::string& keysystem,
                 const std::string& origin,
+                const std::string& initDataType,
                 BufferView& initData) override;
 
             GstFlowReturn Decrypt(std::shared_ptr<EncryptedBuffer>) override;
 
         private:
-            bool SetupOCDM(const std::string& keysystem, const std::string& origin, BufferView& initData);
+            bool SetupOCDM(const std::string& keysystem, 
+                const std::string& origin, 
+                const std::string& initDataType, 
+                BufferView& initData);
             std::string GetDomainName(const std::string& guid);
             uint32_t WaitForKeyId(BufferView& keyId, uint32_t timeout);
             std::unique_ptr<LicenseRequest> CreateLicenseRequest(const string& challenge, const std::string& url);

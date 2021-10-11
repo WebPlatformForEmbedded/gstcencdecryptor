@@ -51,11 +51,12 @@ namespace CENCDecryptor {
 
         IGstDecryptor::Status Decryptor::Initialize(const std::string& keysystem,
             const std::string& origin,
+            const std::string& initDataType,
             BufferView& initData)
         {
             if(!opencdm_is_type_supported(GetDomainName(keysystem).c_str(), "")) {
 
-                return SetupOCDM(keysystem, origin, initData) ? 
+                return SetupOCDM(keysystem, origin, initDataType, initData) ? 
                     IGstDecryptor::Status::SUCCESS : IGstDecryptor::Status::ERROR_INITIALIZE_FAILURE;
 
             } else {
@@ -65,6 +66,7 @@ namespace CENCDecryptor {
 
         bool Decryptor::SetupOCDM(const std::string& keysystem,
             const std::string& origin,
+            const std::string& initDataType,
             BufferView& initData)
         {
             if (_system == nullptr) {
@@ -75,7 +77,7 @@ namespace CENCDecryptor {
 
                     OpenCDMError ocdmResult = opencdm_construct_session(_system,
                         LicenseType::Temporary,
-                        "cenc",
+                        initDataType.c_str(),
                         initData.Raw(),
                         static_cast<uint16_t>(initData.Size()),
                         nullptr,
