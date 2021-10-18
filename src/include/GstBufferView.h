@@ -20,7 +20,6 @@
 
 #include <gst/gstbuffer.h>
 
-namespace WPEFramework {
 namespace CENCDecryptor {
     /**
      * @brief RAII wrapper for the GstBuffer read/write operations.
@@ -60,5 +59,4 @@ namespace CENCDecryptor {
         GstBuffer* _buffer;
         GstMapInfo _dataView;
     };
-}
 }

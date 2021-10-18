@@ -27,7 +27,7 @@
 #include <map>
 #include <mutex>
 
-using namespace WPEFramework::CENCDecryptor;
+using namespace CENCDecryptor;
 
 GST_DEBUG_CATEGORY_STATIC(gst_cencdecrypt_debug_category);
 #define GST_CAT_DEFAULT gst_cencdecrypt_debug_category

@@ -26,7 +26,6 @@
 #include <gst/gstevent.h>
 #include <memory>
 
-namespace WPEFramework {
 namespace CENCDecryptor {
     /**
      * @brief Integration layer between a gstreamer element and CDMi implementation.
@@ -91,5 +90,4 @@ namespace CENCDecryptor {
 
         virtual ~IGstDecryptor(){};
     };
-}
 }

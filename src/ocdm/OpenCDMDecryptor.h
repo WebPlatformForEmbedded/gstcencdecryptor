@@ -32,7 +32,6 @@
 #include <memory>
 #include <mutex>
 
-namespace WPEFramework {
 namespace CENCDecryptor {
     namespace OCDM {
 
@@ -65,10 +64,9 @@ namespace CENCDecryptor {
             OpenCDMSession* _session;
             OpenCDMSessionCallbacks _callbacks;
 
-            Core::Event _keyReceived;
+            WPEFramework::Core::Event _keyReceived;
             std::unique_ptr<LicenseRequest> _licenseRequest;
             std::mutex _sessionMutex;
         };
     }
-}
 }

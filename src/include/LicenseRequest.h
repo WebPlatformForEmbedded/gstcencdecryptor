@@ -1,9 +1,11 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "Tracing.h"
 
 #include <curl/curl.h>
 
+namespace CENCDecryptor {
 class LicenseRequest {
 public:
     using LicenseResponseCallback = std::function<void(uint32_t code, const std::string& body)>;
@@ -57,6 +59,8 @@ public:
                 _callback(responseCode, outputBuffer);
 
                 curl_easy_cleanup(_curlHandle);
+            } else {
+                Trace::error("Could not initialize libcurl.");
             }
         });
     }
@@ -85,3 +89,4 @@ private:
     std::thread _requestThread;
     CURL* _curlHandle;
 };
+}

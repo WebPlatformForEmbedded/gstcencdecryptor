@@ -22,7 +22,6 @@
 #include <gst/gstbuffer.h>
 #include <gst/gstprotection.h>
 
-namespace WPEFramework {
 namespace CENCDecryptor {
     /**
      * @brief Metadata wrapper for an encrypted gstreamer buffer.
@@ -147,5 +146,4 @@ namespace CENCDecryptor {
         bool _isClear;
         GstProtectionMeta* _protectionMeta;
     };
-}
 }

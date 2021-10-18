@@ -18,14 +18,17 @@
 */
 
 #include "OpenCDMDecryptor.h"
+#include "Constants.h"
+#include "Tracing.h"
 
 #include <gst/gstbuffer.h>
 #include <gst/gstevent.h>
 #include <thread>
 
-namespace WPEFramework {
 namespace CENCDecryptor {
     namespace OCDM {
+
+        using namespace WPEFramework;
 
         Decryptor::Decryptor()
             : _system(nullptr)
@@ -84,7 +87,7 @@ namespace CENCDecryptor {
                 &_session);
 
             if (ocdmResult != OpenCDMError::ERROR_NONE) {
-                fprintf(stderr, "Failed to construct session with error: <%d>", ocdmResult);
+                Trace::error("Failed to construct session with error: ", ocdmResult);
                 return false;
             }
             return true;
@@ -109,7 +112,7 @@ namespace CENCDecryptor {
             }
 
             BufferView keyIdView(buffer->KeyId(), GST_MAP_READ);
-            uint32_t waitResult = WaitForKeyId(keyIdView, Core::infinite);
+            uint32_t waitResult = WaitForKeyId(keyIdView, Constants::WaitForKeyTimeInMs);
             if (waitResult == Core::ERROR_NONE) {
 
                 std::lock_guard<std::mutex> lk(_sessionMutex);
@@ -176,8 +179,9 @@ namespace CENCDecryptor {
                 std::lock_guard<std::mutex> lk(_sessionMutex);
                 OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
             } else {
-                fprintf(stderr, "Invalid license response code received: %d \n", code);
+                Trace::error("Error response from the license server, code: ", code);
             }
+            Trace::log("Server response:\n", response);
         }
 
         Decryptor::~Decryptor()
@@ -192,7 +196,7 @@ namespace CENCDecryptor {
                 opencdm_destruct_system(_system);
             }
 
-            WPEFramework::Core::Singleton::Dispose();
+            Core::Singleton::Dispose();
         }
     }
 
@@ -200,5 +204,4 @@ namespace CENCDecryptor {
     {
         return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor());
     }
-}
 }
