@@ -20,7 +20,8 @@
 #pragma once
 
 #include "Constants.h"
-#include <ostream>
+#include <iostream>
+#include <iomanip>
 
 namespace CENCDecryptor {
 
@@ -40,6 +41,16 @@ public:
         std::stringstream ss;
         append(ss, args...);
         std::cerr << Constants::ErrorPrefix << ss.str() << "\n";
+    }
+
+    static std::string uint8_to_string(const uint8_t* array, const uint32_t size)
+    {
+        std::stringstream ss;
+        ss << std::hex << std::setfill('0');
+        for (int index = 0; index < size; ++index) {
+            ss << std::hex << std::setw(2) << static_cast<int>(array[index]);
+        }
+        return ss.str();
     }
 
 private:

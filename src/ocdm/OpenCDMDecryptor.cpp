@@ -141,8 +141,12 @@ namespace CENCDecryptor {
 
             uint32_t result = Core::ERROR_NONE;
 
-            if (keyStatus != KeyStatus::Usable) {
-                result = _keyReceived.Lock(Core::infinite);
+            while (keyStatus != KeyStatus::Usable && result == Core::ERROR_NONE) {
+                Trace::log("Waiting for key: ", Trace::uint8_to_string(keyId.Raw(), keyId.Size()));
+                result = _keyReceived.Lock(timeout);
+                _keyReceived.ResetEvent();
+                std::lock_guard<std::mutex> lk(_sessionMutex);
+                keyStatus = opencdm_session_status(_session, keyId.Raw(), keyId.Size());
             }
             return result;
         }
