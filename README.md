@@ -14,7 +14,7 @@ There are already premade build recipes for [Yocto](https://github.com/WebPlatfo
 When building in a different environment, rules for a normal cmake package apply. If you're extending the `IGstDecryptor.h` interface, make sure to set the cmake flag `GSTCENCDECRYPT_IMPLEMENTATION`, to an approriate value.
 
 ## Capabilities
-The included gstreamer plugin has fixed capabilities of processing `application/x-cenc` and `application/x-webm-enc` assets. It'll handle `GstCaps` negotiation and in-place transformation of the incoming `GstBuffer` structures. 
+This application is meant to be a convenience tool, that helps you with debugging encrypted stream issues outside of a browser environment. It has fixed capabilities of processing `application/x-cenc` and `application/x-webm-enc` assets that contain [streams of the following types](https://github.com/WebPlatformForEmbedded/gstcencdecryptor/blob/master/src/GstCencDecrypt.cpp#L39). It'll handle `GstCaps` negotiation and in-place transformation of the incoming `GstBuffer` structures. 
 
 Since there's no application layer that provides a license URL for the content, you'll have to set it yourself via the `OVERRIDE_LA_URL` environment variable. 
 

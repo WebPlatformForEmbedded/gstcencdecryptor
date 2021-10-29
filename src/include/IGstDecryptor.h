@@ -29,8 +29,7 @@
 namespace CENCDecryptor {
     /**
      * @brief Integration layer between a gstreamer element and CDMi implementation.
-     * Provides the means to decrypt content and redirect license acquisition requests
-     * to the IExhchange.
+     * Provides the means to decrypt content and handle license acquisition requests.
      */
     class IGstDecryptor {
     public:

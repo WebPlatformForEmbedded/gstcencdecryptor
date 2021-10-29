@@ -36,7 +36,7 @@ G_DEFINE_TYPE_WITH_CODE(GstCencDecrypt, gst_cencdecrypt, GST_TYPE_BASE_TRANSFORM
     GST_DEBUG_CATEGORY_INIT(gst_cencdecrypt_debug_category, "cencdecrypt", 0,
         "debug category for cencdecrypt element"));
 
-constexpr static auto clearContentTypes = { "video/mp4", "audio/mp4", "audio/mpeg", "video/x-h264", "video/x-h265", "video/x-vp9" };
+constexpr static auto clearContentTypes = { "audio/mp4", "audio/mpeg", "audio/opus", "video/mp4", "video/x-h264", "video/x-h265", "video/x-vp9" };
 constexpr static auto cencMime = "application/x-cenc";
 constexpr static auto webmMime = "application/x-webm-enc";
 
