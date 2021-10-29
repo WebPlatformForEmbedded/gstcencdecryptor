@@ -215,9 +215,16 @@ static void InitializeDecryptor(GstCencDecrypt* cencdecrypt,
             initDataType,
             initDataView);
 
-        cencdecrypt->_impl->_isDecryptorInitialized = (result == IGstDecryptor::Status::SUCCESS);
-
-        GST_MEMDUMP_OBJECT(cencdecrypt, "Initializing decryptor with initData", initDataView.Raw(), initDataView.Size());
+        if(result == IGstDecryptor::Status::SUCCESS) {
+            cencdecrypt->_impl->_isDecryptorInitialized = true;
+            GST_INFO_OBJECT(cencdecrypt, "Initialized decryptor for keysystem [%s]", keySystem.c_str());
+        } else if(result == IGstDecryptor::Status::ERROR_KEYSYSTEM_NOT_SUPPORTED) {
+            // If the keysystem was the only one supported by the asset, playback will abort.
+            GST_WARNING_OBJECT(cencdecrypt, "Keysystem [%s] not supported by decryptor.", keySystem.c_str());
+        } else {
+            GST_ERROR_OBJECT(cencdecrypt, "Decryptor initialization for keysystem [%s] failed", keySystem.c_str());
+        }
+        GST_MEMDUMP_OBJECT(cencdecrypt, "InitData extracted from protection system metadata ", initDataView.Raw(), initDataView.Size());
     }
 }
 

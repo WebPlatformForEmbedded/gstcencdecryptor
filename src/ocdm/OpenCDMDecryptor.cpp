@@ -40,7 +40,11 @@ namespace CENCDecryptor {
                 Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
                 string challengeData(reinterpret_cast<const char*>(challenge), challengeLength);
                 decryptor->_licenseRequest = std::move(decryptor->CreateLicenseRequest(challengeData, url));
-                decryptor->_licenseRequest->Submit();
+                if(decryptor->_licenseRequest != nullptr) {
+                    decryptor->_licenseRequest->Submit();
+                } else {
+                    Trace::error("Could not create a license acquisition request");
+                }
             };
             auto keyUpdateCallback = [](OpenCDMSession* session, void* userData, const uint8_t keyId[], const uint8_t length) {};
             auto errorMessageCallback = [](OpenCDMSession* session, void* userData, const char message[]) {};
@@ -128,6 +132,7 @@ namespace CENCDecryptor {
                 buffer->StripProtection();
                 return result != OpenCDMError::ERROR_NONE ? IGstDecryptor::Status::ERROR_GENERAL : IGstDecryptor::Status::SUCCESS;
             } else {
+                Trace::error("Error while waiting for a decryption key, code: ", waitResult);
                 buffer->StripProtection();
                 return IGstDecryptor::Status::ERROR_TIMED_OUT_WAITING_FOR_KEY;
             }
@@ -166,7 +171,13 @@ namespace CENCDecryptor {
             auto responseCallback = [&](uint32_t code, const std::string& response) {
                 this->ProcessLicenseResponse(code, response);
             };
-            return std::unique_ptr<LicenseRequest>(new LicenseRequest(url, bodyBytes, headers, responseCallback));
+
+            if (url.empty()) {
+                Trace::error("No license server URL provided, aborting request");
+                return nullptr;
+            } else {
+                return std::unique_ptr<LicenseRequest>(new LicenseRequest(url, bodyBytes, headers, responseCallback));
+            }
         }
 
         void Decryptor::ProcessLicenseResponse(uint32_t code, const std::string& response)
@@ -183,9 +194,9 @@ namespace CENCDecryptor {
                 std::lock_guard<std::mutex> lk(_sessionMutex);
                 OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
             } else {
-                Trace::error("Error response from the license server, code: ", code);
+                Trace::error("Error response from LA server, code: ", code);
+                Trace::log("Server response: ", response);
             }
-            Trace::log("Server response:\n", response);
         }
 
         Decryptor::~Decryptor()
