@@ -48,7 +48,7 @@ static GstCaps* TransformCaps(GstBaseTransform* trans, GstPadDirection direction
 static gboolean SinkEvent(GstBaseTransform* trans, GstEvent* event);
 static GstFlowReturn TransformIp(GstBaseTransform* trans, GstBuffer* buffer);
 
-static GstCaps* SinkCaps(GstCencDecryptClass* klass)
+static GstCaps* SinkCaps(GstCencDecryptClass*)
 {
     GstCaps* caps = gst_caps_new_empty();
     for (auto& type : clearContentTypes) {
@@ -128,7 +128,7 @@ static void gst_cencdecrypt_init(GstCencDecrypt* cencdecrypt)
     GST_FIXME_OBJECT(cencdecrypt, "Caps are constructed based on hard coded keysystem values");
 }
 
-static gboolean SrcCapsTransform(GstCapsFeatures* features,
+static gboolean SrcCapsTransform(GstCapsFeatures*,
     GstStructure* structure,
     gpointer user_data)
 {
@@ -160,9 +160,9 @@ static gboolean SrcCapsTransform(GstCapsFeatures* features,
     return TRUE;
 }
 
-static gboolean SinkCapsTransform(GstCapsFeatures* features,
+static gboolean SinkCapsTransform(GstCapsFeatures*,
     GstStructure* structure,
-    gpointer user_data)
+    gpointer)
 {
     gst_structure_set_name(structure, gst_structure_get_string(structure, "original-media-type"));
     gst_structure_remove_field(structure, "protection-system");
