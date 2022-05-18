@@ -36,7 +36,7 @@ namespace CENCDecryptor {
             , _keyReceived(false, true)
             , _sessionMutex()
         {
-            auto processChallengeCallback = [](OpenCDMSession* session, void* userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength) {
+            auto processChallengeCallback = [](OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength) {
                 Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
                 string challengeData(reinterpret_cast<const char*>(challenge), challengeLength);
                 decryptor->_licenseRequest = std::move(decryptor->CreateLicenseRequest(challengeData, url));
@@ -46,9 +46,9 @@ namespace CENCDecryptor {
                     Trace::error("Could not create a license acquisition request");
                 }
             };
-            auto keyUpdateCallback = [](OpenCDMSession* session, void* userData, const uint8_t keyId[], const uint8_t length) {};
-            auto errorMessageCallback = [](OpenCDMSession* session, void* userData, const char message[]) {};
-            auto keysUpdatedCallback = [](const OpenCDMSession* session, void* userData) {
+            auto keyUpdateCallback = [](OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData VARIABLE_IS_NOT_USED, const uint8_t keyId[] VARIABLE_IS_NOT_USED, const uint8_t length VARIABLE_IS_NOT_USED) {};
+            auto errorMessageCallback = [](OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData VARIABLE_IS_NOT_USED, const char message[] VARIABLE_IS_NOT_USED) {};
+            auto keysUpdatedCallback = [](const OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData) {
                 Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
                 decryptor->_keyReceived.SetEvent();
             };
@@ -71,7 +71,7 @@ namespace CENCDecryptor {
         }
 
         bool Decryptor::InitializeOpenCDM(const std::string& keysystem,
-            const std::string& origin,
+            const std::string& origin VARIABLE_IS_NOT_USED,
             const std::string& initDataType,
             BufferView& initData)
         {
@@ -192,7 +192,7 @@ namespace CENCDecryptor {
                 std::vector<uint8_t> bytes(response.begin(), response.end());
 
                 std::lock_guard<std::mutex> lk(_sessionMutex);
-                OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
+                VARIABLE_IS_NOT_USED OpenCDMError result = opencdm_session_update(_session, bytes.data() + newIndex, bytes.size() - newIndex);
             } else {
                 Trace::error("Error response from LA server, code: ", code);
                 Trace::log("Server response: ", response);

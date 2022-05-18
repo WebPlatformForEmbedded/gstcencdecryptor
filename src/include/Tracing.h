@@ -47,7 +47,7 @@ public:
     {
         std::stringstream ss;
         ss << std::hex << std::setfill('0');
-        for (int index = 0; index < size; ++index) {
+        for (uint32_t index = 0; index < size; ++index) {
             ss << std::hex << std::setw(2) << static_cast<int>(array[index]);
         }
         return ss.str();

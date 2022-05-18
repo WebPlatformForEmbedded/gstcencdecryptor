@@ -46,6 +46,7 @@ namespace CENCDecryptor {
 
         EncryptedBuffer(const EncryptedBuffer&) = default;
         EncryptedBuffer& operator=(const EncryptedBuffer&) = default;
+        virtual ~EncryptedBuffer() = default;
 
         GstBuffer* Buffer() const
         {
