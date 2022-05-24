@@ -92,3 +92,4 @@ private:
     CURL* _curlHandle;
 };
 }
+

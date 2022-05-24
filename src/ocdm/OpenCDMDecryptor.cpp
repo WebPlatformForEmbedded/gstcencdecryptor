@@ -30,11 +30,12 @@ namespace CENCDecryptor {
 
         using namespace WPEFramework;
 
-        Decryptor::Decryptor()
+        Decryptor::Decryptor(bool disposeInstance)
             : _system(nullptr)
             , _session(nullptr)
             , _keyReceived(false, true)
             , _sessionMutex()
+            , _disposeInstance(disposeInstance)
         {
             auto processChallengeCallback = [](OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength) {
                 Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
@@ -211,12 +212,14 @@ namespace CENCDecryptor {
                 opencdm_destruct_system(_system);
             }
 
-            Core::Singleton::Dispose();
+            if (_disposeInstance == true) {
+                opencdm_dispose();
+            }
         }
     }
 
-    std::unique_ptr<IGstDecryptor> IGstDecryptor::Create()
+    std::unique_ptr<IGstDecryptor> IGstDecryptor::Create(bool disposeInstance)
     {
-        return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor());
+        return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor(disposeInstance));
     }
 }
