@@ -29,12 +29,6 @@
 
 using namespace CENCDecryptor;
 
-enum
-{
-  PROP_0,
-  PROP_DISPOSE_INSTANCE,
-};
-
 GST_DEBUG_CATEGORY_STATIC(gst_cencdecrypt_debug_category);
 #define GST_CAT_DEFAULT gst_cencdecrypt_debug_category
 
@@ -88,50 +82,6 @@ struct GstCencDecryptImpl {
     bool _isDecryptorInitialized;
 };
 
-static void
-gst_cencdecrypt_set_dispose_instance (GstCencDecrypt * cencdecrypt, gboolean dispose_instance)
-{
-  cencdecrypt->_dispose_instance = dispose_instance;
-}
-
-static void
-gst_cencdecrypt_get_property (GObject * object,
-    guint prop_id, GValue * value, GParamSpec * pspec)
-{
-  GstCencDecrypt *cencdecrypt = GST_CENCDECRYPT (object);
-
-  switch (prop_id) {
-    case PROP_DISPOSE_INSTANCE:
-      GST_OBJECT_LOCK (cencdecrypt);
-      g_value_set_boolean (value, cencdecrypt->_dispose_instance);
-      GST_OBJECT_UNLOCK (cencdecrypt);
-      break;
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-  }
-}
-
-static void
-gst_cencdecrypt_set_property (GObject * object,
-    guint prop_id, const GValue * value, GParamSpec * pspec)
-{
-  GstCencDecrypt *cencdecrypt = GST_CENCDECRYPT (object);
-
-  switch (prop_id) {
-    case PROP_DISPOSE_INSTANCE:
-    {
-      GST_OBJECT_LOCK (cencdecrypt);
-      gst_cencdecrypt_set_dispose_instance (cencdecrypt, g_value_get_boolean (value));
-      GST_OBJECT_UNLOCK (cencdecrypt);
-      break;
-    }
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-  }
-}
-
 void Finalize(GObject* object)
 {
     GstCencDecrypt* cencdecrypt = GST_CENCDECRYPT(object);
@@ -157,15 +107,7 @@ static void gst_cencdecrypt_class_init(GstCencDecryptClass* klass)
         "CENC decryptor", GST_ELEMENT_FACTORY_KLASS_DECRYPTOR, "Decrypts content with local instance of OpenCDM",
         "FIXME <k.plata@metrological.com>");
 
-    G_OBJECT_CLASS(klass)->set_property = gst_cencdecrypt_set_property;
-    G_OBJECT_CLASS(klass)->get_property = gst_cencdecrypt_get_property;
     G_OBJECT_CLASS(klass)->finalize = Finalize;
-
-    GObjectClass *gobject_class = (GObjectClass *) klass;
-    g_object_class_install_property (gobject_class, PROP_DISPOSE_INSTANCE,
-      g_param_spec_boolean ("disposeinstance", "Dispose Instance",
-          "Whether allow the plugin to dispose its thunder core instance", FALSE,
-          static_cast<GParamFlags>(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
     base_transform_class->transform_caps = GST_DEBUG_FUNCPTR(TransformCaps);
     base_transform_class->transform_ip_on_passthrough = FALSE;
@@ -181,7 +123,7 @@ static void gst_cencdecrypt_init(GstCencDecrypt* cencdecrypt)
     gst_base_transform_set_gap_aware(base, FALSE);
 
     cencdecrypt->_impl = std::unique_ptr<GstCencDecryptImpl>(new GstCencDecryptImpl());
-    cencdecrypt->_impl->_decryptor = IGstDecryptor::Create(cencdecrypt->_dispose_instance);
+    cencdecrypt->_impl->_decryptor = IGstDecryptor::Create();
 
     GST_FIXME_OBJECT(cencdecrypt, "Caps are constructed based on hard coded keysystem values");
 }

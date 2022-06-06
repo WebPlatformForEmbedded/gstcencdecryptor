@@ -37,8 +37,7 @@ namespace CENCDecryptor {
 
         class Decryptor : public IGstDecryptor {
         public:
-            Decryptor() = delete;
-            Decryptor(bool disposeInstance);
+            Decryptor();
             Decryptor(const Decryptor&) = delete;
             Decryptor& operator=(const Decryptor&) = delete;
 
@@ -68,8 +67,6 @@ namespace CENCDecryptor {
             WPEFramework::Core::Event _keyReceived;
             std::unique_ptr<LicenseRequest> _licenseRequest;
             std::mutex _sessionMutex;
-
-            bool _disposeInstance;
         };
     }
 }

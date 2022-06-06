@@ -41,7 +41,7 @@ namespace CENCDecryptor {
             ERROR_GENERAL
         };
 
-        static std::unique_ptr<IGstDecryptor> Create(bool disposeInstance);
+        static std::unique_ptr<IGstDecryptor> Create();
 
         /**
          * @brief Initializes MediaSystem and MediaSession objects.

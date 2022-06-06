@@ -37,7 +37,6 @@ struct GstCencDecryptImpl;
 struct GstCencDecrypt {
     GstBaseTransform base_cencdecrypt;
     std::unique_ptr<GstCencDecryptImpl> _impl;
-    gboolean _dispose_instance;
 };
 
 struct GstCencDecryptClass {

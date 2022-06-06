@@ -23,6 +23,7 @@
 
 #include <gst/gstbuffer.h>
 #include <gst/gstevent.h>
+#include <fstream>
 #include <thread>
 
 namespace CENCDecryptor {
@@ -30,12 +31,11 @@ namespace CENCDecryptor {
 
         using namespace WPEFramework;
 
-        Decryptor::Decryptor(bool disposeInstance)
+        Decryptor::Decryptor()
             : _system(nullptr)
             , _session(nullptr)
             , _keyReceived(false, true)
             , _sessionMutex()
-            , _disposeInstance(disposeInstance)
         {
             auto processChallengeCallback = [](OpenCDMSession* session VARIABLE_IS_NOT_USED, void* userData, const char url[], const uint8_t challenge[], const uint16_t challengeLength) {
                 Decryptor* decryptor = reinterpret_cast<Decryptor*>(userData);
@@ -200,6 +200,23 @@ namespace CENCDecryptor {
             }
         }
 
+        bool LaunchedByWPEProcess()
+        {
+            bool status = false;
+            std::string procPath = std::string("/proc/") + std::to_string(getpid()) + "/cmdline";
+
+            std::ifstream fileStream(procPath);
+            if (fileStream.is_open()) {
+                std::string result;
+                if (std::getline(fileStream, result)) {
+                    if (result.rfind("WPEProcess", 0) == 0) {
+                        status = true;
+                    }
+                }
+            }
+            return status;
+        }
+
         Decryptor::~Decryptor()
         {
             std::unique_lock<std::mutex> lk(_sessionMutex);
@@ -211,15 +228,15 @@ namespace CENCDecryptor {
             if (_system != nullptr) {
                 opencdm_destruct_system(_system);
             }
-
-            if (_disposeInstance == true) {
+            // Dispose singleton instance if it is not invoked in WPEProcess context
+            if (LaunchedByWPEProcess() != true) {
                 opencdm_dispose();
             }
         }
     }
 
-    std::unique_ptr<IGstDecryptor> IGstDecryptor::Create(bool disposeInstance)
+    std::unique_ptr<IGstDecryptor> IGstDecryptor::Create()
     {
-        return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor(disposeInstance));
+        return std::unique_ptr<IGstDecryptor>(new OCDM::Decryptor());
     }
 }
