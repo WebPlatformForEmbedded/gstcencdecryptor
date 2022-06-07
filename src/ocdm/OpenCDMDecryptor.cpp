@@ -23,6 +23,7 @@
 
 #include <gst/gstbuffer.h>
 #include <gst/gstevent.h>
+#include <fstream>
 #include <thread>
 
 namespace CENCDecryptor {
@@ -199,6 +200,23 @@ namespace CENCDecryptor {
             }
         }
 
+        bool LaunchedByWPEProcess()
+        {
+            bool status = false;
+            std::string procPath = std::string("/proc/") + std::to_string(getpid()) + "/cmdline";
+
+            std::ifstream fileStream(procPath);
+            if (fileStream.is_open()) {
+                std::string result;
+                if (std::getline(fileStream, result)) {
+                    if (result.rfind("WPEProcess", 0) == 0) {
+                        status = true;
+                    }
+                }
+            }
+            return status;
+        }
+
         Decryptor::~Decryptor()
         {
             std::unique_lock<std::mutex> lk(_sessionMutex);
@@ -210,8 +228,10 @@ namespace CENCDecryptor {
             if (_system != nullptr) {
                 opencdm_destruct_system(_system);
             }
-
-            Core::Singleton::Dispose();
+            // Dispose singleton instance if it is not invoked in WPEProcess context
+            if (LaunchedByWPEProcess() != true) {
+                opencdm_dispose();
+            }
         }
     }
 

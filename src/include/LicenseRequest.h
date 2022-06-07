@@ -17,6 +17,7 @@ public:
         LicenseResponseCallback callback)
         : _url(url)
         , _body(body)
+        , _hs(nullptr)
         , _callback(callback)
     {
     }
@@ -27,6 +28,7 @@ public:
         LicenseResponseCallback callback)
         : _url(url)
         , _body(body)
+        , _hs(nullptr)
         , _callback(callback)
     {
         for (auto& header : headers) {
@@ -90,3 +92,4 @@ private:
     CURL* _curlHandle;
 };
 }
+
